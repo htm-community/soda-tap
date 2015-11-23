@@ -1,0 +1,15 @@
+$def with (data, dictTemplate, listTemplate)
+
+<ul>
+
+$for item in data:
+    <li>
+    $if isinstance(item, dict):
+      $:dictTemplate(item, dictTemplate, listTemplate)
+    $elif isinstance(item, list):
+      $:listTemplate(item, dictTemplate, listTemplate)
+    $else:
+      $item
+    </li>
+    
+</ul>

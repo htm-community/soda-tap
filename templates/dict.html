@@ -1,0 +1,16 @@
+$def with (data, dictTemplate, listTemplate)
+
+<dl>
+
+$for key in data:
+  <dt>$key</dt>
+  <dd>
+    $if isinstance(data[key], dict):
+      $:dictTemplate(data[key], dictTemplate, listTemplate)
+    $elif isinstance(data[key], list):
+      $:listTemplate(data[key], dictTemplate, listTemplate)
+    $else:
+      $data[key]
+  </dd>
+    
+</dl>
