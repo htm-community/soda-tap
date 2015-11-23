@@ -1,5 +1,7 @@
+import json
+
 import web
-from sodatap import createCatalog
+import redis
 
 urls = (
   "/", "index",
@@ -8,6 +10,17 @@ urls = (
 )
 app = web.application(urls, globals())
 render = web.template.render('templates')
+r = redis.StrictRedis(host="localhost", port=6379, db=0)
+
+
+def chunks(l, n):
+  """Yield successive n-sized chunks from l."""
+  for i in xrange(0, len(l), n):
+    yield l[i:i + n]
+
+#####
+# HTTP handlers
+#####
 
 class index:
   def GET(self):
@@ -16,8 +29,11 @@ class index:
 
 class catalog:
   def GET(self, page=0):
-    catalog = createCatalog()
-    page = catalog[int(page)]
+    stored = r.keys("*")
+    chunked = list(chunks(stored, 10))
+    pageIds = chunked[int(page)]
+    page = [json.loads(r.get(id)) for id in pageIds]
+    print page[0]
     print len(page)
     return render.catalog(page, render.dict, render.list)
 

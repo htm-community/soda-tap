@@ -30,28 +30,33 @@ $def with (page, dictTemplate, listTemplate)
 
 <table>
 $for resource in page:
-    $ resourceData = resource.getResource()
-    $ resourceDomain = resource.getMetadata()["domain"]
+    $ entry = resource["catalogEntry"]
+    $ resourceData = entry["resource"]
+    $ resourceDomain = entry["metadata"]["domain"]
+    $ resourceClassification = entry["classification"]
     <tr class="$loop.parity">
         <th>
-            <a href="$resource.getPermalink()" target="_blank">
+            <a href="${entry['permalink']}" target="_blank">
                 $resourceData["name"]
             </a>
         </th>
         <th>
-            <a href="$resource.getJsonUrl()" target="_blank">
+            <a href="${resource['jsonUrl']}" target="_blank">
                 $resourceDomain
             </a>
         </th>
+        <th>
+            $resource["temporalField"]
+        </th>
     </tr>
     <tr>
-        <td colspan="2">
-            $:dictTemplate(resource.getClassification(), dictTemplate, listTemplate)
+        <td colspan="3">
+            $:dictTemplate(resourceClassification, dictTemplate, listTemplate)
         </td>
     </tr>
     <tr>
-        <td colspan="2">
-            $:dictTemplate(resource.getResource(), dictTemplate, listTemplate)
+        <td colspan="3">
+            $:dictTemplate(resourceData, dictTemplate, listTemplate)
         </td>
     </tr>
 </table>

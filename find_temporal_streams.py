@@ -1,4 +1,5 @@
 import datetime
+import json
 
 import redis
 
@@ -34,7 +35,9 @@ def getMainTemporalFieldName(temporalFieldNames):
     return None
   name = temporalFieldNames[0]
   for n in temporalFieldNames:
-    if "created" in n.lower() or "open" in n.lower():
+    if "created" in n.lower() or \
+       "open" in n.lower() or \
+       "received" in n.lower:
       name = n
   return name
 
@@ -56,7 +59,11 @@ for page in catalog:
       if temporal:
         field = getMainTemporalFieldName(temporalFieldNames)
         print "\tStoring %s ==> %s" % (id, field)
-        r.set(id, field)
+        r.set(id, json.dumps({
+          "temporalField": field,
+          "jsonUrl": resource.getJsonUrl(),
+          "catalogEntry": resource.json()
+        }))
       else:
         print "\tSkipping %s" % resource.getName()
     finally:
