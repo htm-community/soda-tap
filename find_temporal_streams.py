@@ -24,10 +24,8 @@ def isTemporal(resource):
       temporalFieldNames.append(key)
 
   if len(temporalFieldNames) > 0:
-    print "\t== %s is temporal ==" % resource.getName() 
-    print getMainTemporalFieldName(temporalFieldNames)
-    return True, temporalFieldNames
-  return False, None
+    return True, temporalFieldNames, point
+  return False, None, point
 
 
 def getMainTemporalFieldName(temporalFieldNames):
@@ -37,10 +35,34 @@ def getMainTemporalFieldName(temporalFieldNames):
   for n in temporalFieldNames:
     if "created" in n.lower() or \
        "open" in n.lower() or \
-       "received" in n.lower:
+       "received" in n.lower():
       name = n
   return name
 
+
+def getDataType(key, value):
+  if isinstance(value, dict):
+    return "dict"
+  if isinstance(value, list):
+    return "list"
+  try:
+    int(value)
+    return "int"
+  except ValueError:
+    try:
+      float(value)
+      return "float"
+    except ValueError:
+      if isDateString(value):
+        return "date"
+      return "str"
+
+
+def extractFieldMetaFrom(dataPoint):
+  fieldMeta = {}
+  for key, val in dataPoint.iteritems():
+    fieldMeta[key] = getDataType(key, val)
+  return fieldMeta
 
 
 r = redis.StrictRedis(host="localhost", port=6379, db=0)
@@ -55,13 +77,14 @@ for page in catalog:
       if id in stored:
         print "\t%s already stored, skipping temporal check" % id
         continue
-      temporal, temporalFieldNames = isTemporal(resource)
+      temporal, temporalFieldNames, dataPoint = isTemporal(resource)
       if temporal:
         field = getMainTemporalFieldName(temporalFieldNames)
         print "\tStoring %s ==> %s" % (id, field)
         r.set(id, json.dumps({
           "temporalField": field,
           "jsonUrl": resource.getJsonUrl(),
+          "fieldMeta": extractFieldMetaFrom(dataPoint),
           "catalogEntry": resource.json()
         }))
       else:

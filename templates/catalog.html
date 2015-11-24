@@ -32,9 +32,10 @@ $def with (page, dictTemplate, listTemplate)
 $for resource in page:
     $ entry = resource["catalogEntry"]
     $ resourceData = entry["resource"]
+    $ id = resourceData["id"]
     $ resourceDomain = entry["metadata"]["domain"]
     $ resourceClassification = entry["classification"]
-    <tr class="$loop.parity">
+    <tr>
         <th>
             <a href="${entry['permalink']}" target="_blank">
                 $resourceData["name"]
@@ -48,6 +49,9 @@ $for resource in page:
         <th>
             $resource["temporalField"]
         </th>
+    </tr>
+    <tr>
+        <td colspan="3" class="viz" data-id="$id"></td>
     </tr>
     <tr>
         <td colspan="3">
@@ -65,6 +69,9 @@ $for resource in page:
     <script src="/static/bower_components/jquery/dist/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="/static/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- Program code -->
+    <script src="/static/js/catalog.js"></script>
+
   </body>
 </html>
 

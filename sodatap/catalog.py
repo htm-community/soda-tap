@@ -1,4 +1,3 @@
-import datetime
 import requests
 
 URL = "http://api.us.socrata.com/api/catalog/"
@@ -7,20 +6,12 @@ FILTER = "only=datasets"
 
 DEFAULT_OFFSET = 0
 DEFAULT_LIMIT = 100
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
 
 # Entry point to the whole thing.
 def createCatalog():
   return Catalog()
 
-
-def isDateString(str):
-  try:
-    datetime.datetime.strptime(str, DATE_FORMAT)
-    return True
-  except ValueError:
-    return False
 
 
 class Catalog:
@@ -133,7 +124,7 @@ class Resource:
       return point
     json = response.json()
     if len(json) > 0:
-      point = response.json()[0]
+      point = json[0]
     return point
   
   def json(self):
