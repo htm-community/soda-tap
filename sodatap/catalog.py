@@ -117,9 +117,12 @@ class Resource:
            + "/resource/" + self.getResource()["id"] + ".json"
   
 
-  def fetchData(self, limit=5000):
+  def fetchData(self, limit=5000, order=None):
+    url = self.getJsonUrl() + "?$limit=" + str(limit)
+    if order is not None:
+      url += "&$order=" + order
     try:
-      response = requests.get(self.getJsonUrl() + "?$limit=" + str(limit))
+      response = requests.get(url)
     except requests.exceptions.ConnectionError:
       return []
     return response.json()

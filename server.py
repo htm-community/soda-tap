@@ -31,12 +31,10 @@ class index:
 
 class catalog:
   def GET(self, page=0):
-    stored = r.keys("*")
+    stored = sorted(r.keys("*"))
     chunked = list(chunks(stored, ITEMS_PER_PAGE))
     pageIds = chunked[int(page)]
     page = [json.loads(r.get(id)) for id in pageIds]
-    print page[0]
-    print len(page)
     return render.catalog(page, render.dict, render.list)
 
 

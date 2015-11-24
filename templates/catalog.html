@@ -39,29 +39,25 @@ $for resource in page:
     $ permalink = entry["permalink"]
     $ jsonUrl = resource["jsonUrl"]
     $ temporalField = resource["temporalField"]
-    $ fieldMeta = resource["fieldMeta"]
+    $ fieldTypes = resource["fieldTypes"]
+    $ dataType = resource["type"]
 
     <article id="$id">
-        <h3>$name <small>$resourceDomain</small></h3>
+        <h3>$name <small>$resourceDomain $id</small></h3>
         <p>$description</p>
         <div id="${id}-viz" class="viz" 
              data-id="$id" 
+             data-type="$dataType"
              data-json-url="$jsonUrl"
              data-temporal-field="$temporalField"
-             $for k, v in fieldMeta.iteritems():
+             $for k, v in fieldTypes.iteritems():
                  data-${k}="${v}"
         >
         </div>
         <div class="meta">
             <div class="types">
-                $:dictTemplate(fieldMeta, dictTemplate, listTemplate)
+                $:dictTemplate(fieldTypes, dictTemplate, listTemplate)
             </div>
-            <!--<div class="classification">-->
-                <!--$:dictTemplate(resourceClassification, dictTemplate, listTemplate)-->
-            <!--</div>-->
-            <!--<div class="resource-data">-->
-                <!--$:dictTemplate(resourceData, dictTemplate, listTemplate)-->
-            <!--</div>-->
         </div>
     </article>
   
