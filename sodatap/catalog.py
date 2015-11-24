@@ -116,16 +116,14 @@ class Resource:
     return "https://" + self.getMetadata()["domain"] \
            + "/resource/" + self.getResource()["id"] + ".json"
   
-  def getFirstDataPoint(self):
-    point = {}
+
+  def fetchData(self, limit=5000):
     try:
-      response = requests.get(self.getJsonUrl() + "?$limit=1")
+      response = requests.get(self.getJsonUrl() + "?$limit=" + str(limit))
     except requests.exceptions.ConnectionError:
-      return point
-    json = response.json()
-    if len(json) > 0:
-      point = json[0]
-    return point
+      return []
+    return response.json()
+    
   
   def json(self):
     return self._json

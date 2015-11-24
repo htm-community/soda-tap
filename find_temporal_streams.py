@@ -18,7 +18,7 @@ def isDateString(str):
 
 def isTemporal(resource):
   temporalFieldNames = []
-  point = resource.getFirstDataPoint()
+  point = resource.fetchData(limit=1)[0]
   for key, value in point.iteritems():
     if isinstance(value, basestring) and isDateString(value):
       temporalFieldNames.append(key)
@@ -40,22 +40,40 @@ def getMainTemporalFieldName(temporalFieldNames):
   return name
 
 
+def isNonNumericalNumberString(key):
+  blacklist = [
+    "zip", "address", "latitude", "longitude", "incidentid",
+    "number", "code", "year", "month", "meter_id", "bldgid",
+    "parcel_no", "case", "_no", "uniquekey", "district",
+    "_id", "_key", "checknum"
+  ]
+  for word in blacklist:
+    if word in key:
+      return True
+  return False
+
+
 def getDataType(key, value):
-  if isinstance(value, dict):
-    return "dict"
-  if isinstance(value, list):
-    return "list"
-  try:
-    int(value)
-    return "int"
-  except ValueError:
+  if isNonNumericalNumberString(key):
+    dataType = "str"
+  elif isinstance(value, dict):
+    dataType = "dict"
+  elif isinstance(value, list):
+    dataType = "list"
+  else:
     try:
-      float(value)
-      return "float"
+      int(value)
+      dataType = "int"
     except ValueError:
-      if isDateString(value):
-        return "date"
-      return "str"
+      try:
+        float(value)
+        dataType = "float"
+      except ValueError:
+        if isDateString(value):
+          dataType = "date"
+        else:
+          dataType = "str"
+  return dataType
 
 
 def extractFieldMetaFrom(dataPoint):

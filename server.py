@@ -3,6 +3,8 @@ import json
 import web
 import redis
 
+ITEMS_PER_PAGE = 20
+
 urls = (
   "/", "index",
   "/catalog", "catalog",
@@ -30,7 +32,7 @@ class index:
 class catalog:
   def GET(self, page=0):
     stored = r.keys("*")
-    chunked = list(chunks(stored, 10))
+    chunked = list(chunks(stored, ITEMS_PER_PAGE))
     pageIds = chunked[int(page)]
     page = [json.loads(r.get(id)) for id in pageIds]
     print page[0]

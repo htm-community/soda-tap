@@ -28,47 +28,51 @@ $def with (page, dictTemplate, listTemplate)
 
 <h2>${len(page)} results:</h2>
 
-<table>
 $for resource in page:
     $ entry = resource["catalogEntry"]
     $ resourceData = entry["resource"]
     $ id = resourceData["id"]
+    $ name = resourceData["name"]
+    $ description = resourceData["description"]
     $ resourceDomain = entry["metadata"]["domain"]
     $ resourceClassification = entry["classification"]
-    <tr>
-        <th>
-            <a href="${entry['permalink']}" target="_blank">
-                $resourceData["name"]
-            </a>
-        </th>
-        <th>
-            <a href="${resource['jsonUrl']}" target="_blank">
-                $resourceDomain
-            </a>
-        </th>
-        <th>
-            $resource["temporalField"]
-        </th>
-    </tr>
-    <tr>
-        <td colspan="3" class="viz" data-id="$id"></td>
-    </tr>
-    <tr>
-        <td colspan="3">
-            $:dictTemplate(resourceClassification, dictTemplate, listTemplate)
-        </td>
-    </tr>
-    <tr>
-        <td colspan="3">
-            $:dictTemplate(resourceData, dictTemplate, listTemplate)
-        </td>
-    </tr>
-</table>
+    $ permalink = entry["permalink"]
+    $ jsonUrl = resource["jsonUrl"]
+    $ temporalField = resource["temporalField"]
+    $ fieldMeta = resource["fieldMeta"]
+
+    <article id="$id">
+        <h3>$name <small>$resourceDomain</small></h3>
+        <p>$description</p>
+        <div id="${id}-viz" class="viz" 
+             data-id="$id" 
+             data-json-url="$jsonUrl"
+             data-temporal-field="$temporalField"
+             $for k, v in fieldMeta.iteritems():
+                 data-${k}="${v}"
+        >
+        </div>
+        <div class="meta">
+            <div class="types">
+                $:dictTemplate(fieldMeta, dictTemplate, listTemplate)
+            </div>
+            <!--<div class="classification">-->
+                <!--$:dictTemplate(resourceClassification, dictTemplate, listTemplate)-->
+            <!--</div>-->
+            <!--<div class="resource-data">-->
+                <!--$:dictTemplate(resourceData, dictTemplate, listTemplate)-->
+            <!--</div>-->
+        </div>
+    </article>
   
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="/static/bower_components/jquery/dist/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="/static/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- lodash -->
+    <script src="/static/bower_components/lodash/lodash.min.js"></script>
+    <!-- Dygraphs -->
+    <script src="/static/bower_components/dygraphs/dygraph-combined-dev.js"></script>
     <!-- Program code -->
     <script src="/static/js/catalog.js"></script>
 
