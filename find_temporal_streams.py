@@ -1,5 +1,7 @@
 import datetime
 import json
+import os
+import urlparse
 
 import redis
 from termcolor import colored
@@ -7,7 +9,9 @@ from termcolor import colored
 from sodatap import createCatalog
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
-
+REDIS_URL = os.environ["REDIS_URL"]
+REDIS_DB = 0
+POOL = None
 
 def isDateString(str):
   try:
@@ -153,7 +157,11 @@ def validateTemporal(temporalField, data, fieldTypes):
 
 
 def run():
-  redisClient = redis.StrictRedis(host="localhost", port=6379, db=0)
+  redisUrl = urlparse.urlparse(REDIS_URL)
+  redisClient = redis.Redis(
+    host=redisUrl.hostname, port=redisUrl.port, 
+    db=REDIS_DB, password=redisUrl.password
+  )
   stored = redisClient.keys("*")
   count = 0
   catalog = createCatalog()

@@ -1,12 +1,16 @@
 import os
 
 import json
+import urlparse
 
 import web
 import redis
 
 ITEMS_PER_PAGE = 10
 GOOGLE_MAPS_API_KEY = os.environ["GOOGLE_MAPS_API_KEY"]
+REDIS_URL = os.environ["REDIS_URL"]
+REDIS_DB = 0
+POOL = None
 
 urls = (
   "/", "index",
@@ -16,7 +20,15 @@ urls = (
 )
 app = web.application(urls, globals())
 render = web.template.render('templates/')
-r = redis.StrictRedis(host="localhost", port=6379, db=0)
+
+
+def createConnectionPool():
+  print REDIS_URL
+  redisUrl = urlparse.urlparse(REDIS_URL)
+  return redis.ConnectionPool(
+    host=redisUrl.hostname, port=redisUrl.port, 
+    db=REDIS_DB, password=redisUrl.password
+  )
 
 
 def chunks(l, n):
@@ -24,16 +36,20 @@ def chunks(l, n):
   for i in xrange(0, len(l), n):
     yield l[i:i + n]
 
+
 #####
 # HTTP handlers
 #####
+
 
 class index:
   def GET(self):
     return render.layout(render.index(), GOOGLE_MAPS_API_KEY)
 
+
 class catalog:
   def GET(self, page=0):
+    r = redis.Redis(connection_pool=POOL)
     query = web.input()
     if "type" in query:
       stored = sorted(r.smembers(query["type"]))
@@ -49,8 +65,10 @@ class catalog:
       page, render.dict, render.list
     ), GOOGLE_MAPS_API_KEY)
 
+
 class resource:
   def GET(self, id=None):
+    r = redis.Redis(connection_pool=POOL)
     key = r.keys("*:" + id)
     if key is None:
       return web.notfound("The resource " + id + " was not found.")
@@ -60,5 +78,7 @@ class resource:
       resource, render.dict, render.list
     ), GOOGLE_MAPS_API_KEY)
 
+
 if __name__ == "__main__":
+  POOL = createConnectionPool()
   app.run()
