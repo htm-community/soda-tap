@@ -2,23 +2,53 @@ import requests
 
 URL = "http://api.us.socrata.com/api/catalog/"
 VERSION = "v1"
-FILTER = "only=datasets"
+FILTER = ""
 
 DEFAULT_OFFSET = 0
 DEFAULT_LIMIT = 100
 
 
 # Entry point to the whole thing.
-def createCatalog():
-  return Catalog()
+def createCatalog(offset=DEFAULT_OFFSET):
+  return Catalog(offset=offset)
+
+
+def fetch(url):
+  try:
+    r = requests.get(url)
+    if r.status_code != 200:
+      print r.json()
+      dataOut = []
+    else:
+      print r.request.url
+      dataOut = r.json()
+  except requests.exceptions.ConnectionError as e:
+    print url + "  " + str(e)
+    dataOut = []
+  return dataOut
+
+
+def fetchCatalogData(offset):
+  return fetch(
+    URL + VERSION
+    + "?" + FILTER
+    + "&offset=" + str(offset)
+  )
+
+
+def fetchResourceData(jsonUrl, limit, order):
+  url = jsonUrl + "?$limit=" + str(limit)
+  if order is not None:
+    url += "&$order=" + order
+  return fetch(url)
 
 
 
 class Catalog:
 
   
-  def __init__(self):
-    self._offset = DEFAULT_OFFSET
+  def __init__(self, offset=DEFAULT_OFFSET):
+    self._offset = offset
     self._limit = DEFAULT_LIMIT
 
   
@@ -29,27 +59,14 @@ class Catalog:
   def __getitem__(self, i):
     itemsPerPage = self._limit
     startOffset = itemsPerPage * i
-    response = requests.get(
-      URL + VERSION
-      + "?" + FILTER
-      + "&offset=" + str(startOffset)
-    )
-    print response.request.url
-    data = response.json()
+    data = fetchCatalogData(startOffset)
     page = Page(data)
     return page
 
 
   def next(self):
     self._offset += self._limit
-    # print "fetching more... [offset %s]" % self._offset
-    response = requests.get(
-      URL + VERSION
-      + "?" + FILTER
-      + "&offset=" + str(self._offset)
-    )
-    print response.request.url
-    data = response.json()
+    data = fetchCatalogData(self._offset)
     page = Page(data)
     return page
 

@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import sys
 import urlparse
 
 import redis
@@ -121,7 +122,11 @@ def getFieldRanking(data):
 
 
 
-def validateTemporal(temporalField, data, fieldTypes):
+def validateTemporal(name, temporalField, data, fieldTypes):
+  # State lottery is pretty useless from what I have seen.
+  if "lottery" in name.lower() or "lotto" in name.lower():
+    raise ValueError("Lottery stream.")
+  
   # Not temporal if there are less than 100 data points.
   if len(data) < 100:
     raise ValueError("Not enough data to analyze.")
@@ -156,15 +161,15 @@ def validateTemporal(temporalField, data, fieldTypes):
     raise ValueError("Data is in the future!")
 
 
-def run():
+def run(offset=0):
   redisUrl = urlparse.urlparse(REDIS_URL)
   redisClient = redis.Redis(
     host=redisUrl.hostname, port=redisUrl.port, 
     db=REDIS_DB, password=redisUrl.password
   )
   stored = redisClient.keys("*")
-  count = 0
-  catalog = createCatalog()
+  count = offset
+  catalog = createCatalog(offset=offset)
 
   for page in catalog:
     for resource in page:
@@ -184,8 +189,8 @@ def run():
           dataPoint = resource.fetchData(limit=100)[0]
         except IndexError:
           raise ValueError("No data!")
-        except KeyError:
-          raise ValueError("Error fetching first data point: " + str(e));
+        except KeyError as e:
+          raise ValueError("Error fetching first data point: " + str(e))
         temporalFieldNames = getTemporalFields(dataPoint)
         primaryTemporalField = getPrimaryTemporalField(temporalFieldNames)
         # Not temporal if there's no temporal field identified.
@@ -202,8 +207,9 @@ def run():
           raise ValueError("Error fetching sample data: " + str(e))
         # If this is a not temporal stream, the function below will raise a
         # ValueError
-        validateTemporal(primaryTemporalField, data, fieldTypes)
-        fieldRanking = getFieldRanking(data)
+        validateTemporal(name, primaryTemporalField, data, fieldTypes)
+        # TODO: rank fields?
+        # fieldRanking = getFieldRanking(data)
         storeResource(redisClient, resource, primaryTemporalField, fieldTypes)
         print colored(
           "  Stored %s (%s %s) by %s" % (name, id, domain, primaryTemporalField), 
@@ -212,9 +218,9 @@ def run():
 
       except ValueError as e:
         print colored(
-          "  [%s %s] %s: %s" % (id, domain, name, e), 
+          "  [%s %s] %s:" % (id, domain, name), 
           "yellow"
-        )
+        ) + " " + colored(str(e), "magenta")
       
       finally:
         count += 1
@@ -229,4 +235,7 @@ def run():
   
 
 if __name__ == "__main__":
-  run()
+  offset = 0
+  if len(sys.argv) > 0:
+    offset = int(sys.argv[1])
+  run(offset)
