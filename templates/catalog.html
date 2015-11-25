@@ -1,4 +1,4 @@
-$def with (page, dictTemplate, listTemplate)
+$def with (page, dictTemplate, listTemplate, googleMapsApiKey)
 
 <!DOCTYPE html>
 <html lang="en">
@@ -28,6 +28,9 @@ $def with (page, dictTemplate, listTemplate)
 
 <h2>${len(page)} results:</h2>
 
+<div class="page-nav prev-nav-container"></div>
+<div class="page-nav next-nav-container"></div>
+
 $for resource in page:
     $ entry = resource["catalogEntry"]
     $ resourceData = entry["resource"]
@@ -42,7 +45,7 @@ $for resource in page:
     $ fieldTypes = resource["fieldTypes"]
     $ dataType = resource["type"]
 
-    <article id="$id">
+    <article id="$id" class="resource">
         <h3>$name <small>$resourceDomain $id</small></h3>
         <p>$description</p>
         <div id="${id}-viz" class="viz" 
@@ -54,24 +57,40 @@ $for resource in page:
                  data-${k}="${v}"
         >
         </div>
-        <div class="meta">
-            <div class="types">
-                $:dictTemplate(fieldTypes, dictTemplate, listTemplate)
-            </div>
+        
+        <div class="data-table" id="${id}-table">
+            <table>
+                <thead></thead>
+                <tbody></tbody>
+           </table>
         </div>
+        
+        <!--<table id="${id}-table">-->
+            <!--<thead></thead>-->
+            <!--<tbody></tbody>-->
+        <!--</table>-->
+        
+        <!--<div class="meta">-->
+            <!--<div class="types">-->
+                <!--$:dictTemplate(fieldTypes, dictTemplate, listTemplate)-->
+            <!--</div>-->
+        <!--</div>-->
     </article>
   
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="/static/bower_components/jquery/dist/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="/static/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <!-- lodash -->
-    <script src="/static/bower_components/lodash/lodash.min.js"></script>
-    <!-- Dygraphs -->
-    <script src="/static/bower_components/dygraphs/dygraph-combined-dev.js"></script>
-    <!-- Program code -->
-    <script src="/static/js/catalog.js"></script>
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="/static/bower_components/jquery/dist/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/static/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- Google Maps -->
+<script src="https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}">
+</script>
+<!-- lodash -->
+<script src="/static/bower_components/lodash/lodash.min.js"></script>
+<!-- Dygraphs -->
+<script src="/static/bower_components/dygraphs/dygraph-combined-dev.js"></script>
+<!-- Program code -->
+<script src="/static/js/catalog.js"></script>
 
-  </body>
+</body>
 </html>
 

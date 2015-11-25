@@ -1,17 +1,9 @@
 $(function() {
 
-    function graphData(id, data, temporalField, typeIndex) {
+    var DEFAULT_DATA_LIMIT = 100;
+
+    function graphData(id, data, graphLabels, temporalField, typeIndex) {
         var graphInput = [];
-        // The temporal field is always first because it contains the date
-        var graphLabels = [temporalField];
-        _.each(typeIndex, function(type, name) {
-            // We will graph all number types
-            if (_.contains(['int', 'float'], type)) {
-                graphLabels.push(name);
-            }
-        });
-        // Reverse the data because it came in descending order.
-        data = data.reverse();
         _.each(data, function(point) {
             var row = [];
             row.push(new Date(point[temporalField]));
@@ -23,31 +15,120 @@ $(function() {
         new Dygraph(
             document.getElementById(id + '-viz'),
             graphInput, 
-            {labels: graphLabels}
+            {
+                labels: graphLabels,
+                width: 800
+            }
         );
     }
+    
+    function renderMap(id, data) {
+        var vizContainer = $('#' + id + '-viz');
+        vizContainer.html('<div class="map" id="' + id + '-map"></div>');
+        var markers = [];
+        var lastLatLng;
+        var map = new google.maps.Map(document.getElementById(id + '-map'), {
+            center: {lat: -34.397, lng: 150.644},
+            zoom: 8
+        });
+        
+        _.each(data, function(point) {
+            var lat, lon;
+            _.each(point, function(val, key) {
+                if (val.type && val.type == 'Point') {
+                    lat = val.coordinates[1];
+                    lon = val.coordinates[0];
+                }
+            });
+            var myLatLng = {lat: lat, lng: lon};
+            markers.push(new google.maps.Marker({
+                position: myLatLng,
+                map: map,
+                title: 'Hello World!'
+            }));
+            lastLatLng = myLatLng;
+        });
+        map.setCenter(lastLatLng);
+    }
+    
+    function renderDataTable(id, data, tableHeaders, temporalField, typeIndex) {
+        var $table = $('#' + id + '-table');
+        var $thead = $table.find('thead');
+        var $tbody = $table.find('tbody');
+        var html = '';
+        var row = '';
+        // Header row
+        row += '<tr>';
+        _.each(tableHeaders, function(header) {
+            row += '<th>' + header + ' (' + typeIndex[header] + ')</th>\n';
+        });
+        row += '</tr>\n';
+        $thead.html(row);
+        _.each(data, function(point) {
+            row = '<tr>';
+            _.each(tableHeaders, function(header) {
+                row += '<td>' + point[header] + '</td>\n';
+            });
+            row += '</tr>\n';
+            html += row;
+        });
+        $tbody.html(html);
+    }
+    
+    // Enable navigation buttons
+    var url = window.location.href;
+    var splitUrl = url.split('/');
+    var currentPage = parseInt(splitUrl.pop());
+    var urlNoPage = splitUrl.join('/');
+    var nextPage = currentPage + 1;
+    var prevPage = currentPage - 1;
+    var prevUrl = urlNoPage + '/' + prevPage;
+    var nextUrl = urlNoPage + '/' + nextPage;
+    $('.prev-nav-container').html('<a href="' + prevUrl + '">Page ' + prevPage + '</a>');
+    $('.next-nav-container').html('<a href="' + nextUrl + '">Page ' + nextPage + '</a>');
 
-
+    // Renders visualizations for each resource on the page.
     $('.viz').each(function(i, el) {
-        var data = $(el).data()
-        var id = data.id;
-        var temporalField = data.temporalField;
-        var jsonUrl = data.jsonUrl + '?$order=' + temporalField + ' DESC';
+        var dataAttrs = $(el).data()
+        var id = dataAttrs.id;
+        var temporalField = dataAttrs.temporalField;
+        var jsonUrl = dataAttrs.jsonUrl 
+            + '?$order=' + temporalField + ' DESC' 
+            + '&$limit=' + DEFAULT_DATA_LIMIT;
         var typeIndex = {};
-        var dataType = data.type;
+        var dataType = dataAttrs.type;
         // The rest of the data attributes are field types.
-        _.each(data, function(value, name) {
-            if (! _.contains(['id', 'jsonUrl', 'temporalField'], name)) {
+        _.each(dataAttrs, function(value, name) {
+            if (! _.contains(['id', 'jsonUrl', 'temporalField', 'type'], name)) {
                 typeIndex[name] = value;
             }
         });
+
         $.getJSON(jsonUrl, function(data) {
-            if (id == 'tepf-4hw3') {
-                console.log(data);
-            }
+            var graphLabels, tableHeaders;
+            // Reverse the data because it came in descending order.
+            data = data.reverse();
+
+            // The temporal field is always first because it contains the date
+            graphLabels = [temporalField];
+            tableHeaders = [temporalField];
+            _.each(typeIndex, function(type, name) {
+                // We will graph all number types
+                if (_.contains(['int', 'float'], type)) {
+                    graphLabels.push(name);
+                }
+                if (name != temporalField) {
+                    tableHeaders.push(name);
+                }
+            });
+
             if (dataType == 'scalar') {
-                graphData(id, data, temporalField, typeIndex)
+                graphData(id, data, graphLabels, temporalField, typeIndex);
+            } else {
+                renderMap(id, data);
             }
+            renderDataTable(id, data, tableHeaders, temporalField, typeIndex);
         });
     });
+    
 }());

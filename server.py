@@ -1,9 +1,12 @@
+import os
+
 import json
 
 import web
 import redis
 
-ITEMS_PER_PAGE = 20
+ITEMS_PER_PAGE = 10
+GOOGLE_MAPS_API_KEY = os.environ["GOOGLE_MAPS_API_KEY"]
 
 urls = (
   "/", "index",
@@ -35,7 +38,9 @@ class catalog:
     chunked = list(chunks(stored, ITEMS_PER_PAGE))
     pageIds = chunked[int(page)]
     page = [json.loads(r.get(id)) for id in pageIds]
-    return render.catalog(page, render.dict, render.list)
+    return render.catalog(
+      page, render.dict, render.list, GOOGLE_MAPS_API_KEY
+    )
 
 
 if __name__ == "__main__":

@@ -2,3 +2,53 @@ body {
     margin: 20px 100px;
 }
 
+.page-nav {
+    position: absolute;
+    top: 0;
+    border: solid black 1px;
+    padding: 10px;
+    margin: 0px;
+}
+.prev-nav-container {
+    left: 0;
+}
+.next-nav-container {
+    right: 0;
+}
+
+.data-table {
+    border: 1px solid lightgrey;
+}
+
+.data-table {
+    overflow: scroll;
+    height: 200px;
+    width: 800px;
+}
+
+.data-table table {
+    border-collapse: collapse;
+}
+.data-table th, td {
+    border: 1px solid gray;
+}
+.data-table th {
+    background-color: lightgrey;
+    border-width: 1px;
+    width: 60px;
+}
+.data-table td {
+    border-width: 1px;
+    width: 60px;
+}
+.data-table tr:first-child td {
+    border-top-width: 0;
+}
+.data-table tr:nth-child(even) {
+    background-color: #eee;
+}
+
+.map {
+    width: 800px;
+    height: 400px;
+}

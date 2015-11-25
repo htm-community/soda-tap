@@ -88,7 +88,10 @@ def extractFieldTypesFrom(dataPoint):
 def storeResource(redisClient, resource, field, fieldTypes):
   id = resource.getId()
   type = "scalar"
-  if "location" in fieldTypes.values():
+  fieldNames = fieldTypes.values()
+  if "location" in fieldNames \
+          or ("latitude" in fieldNames 
+              and "longitude" in fieldNames):
     type = "geospatial"
   redisClient.set(id, json.dumps({
     "type": type,
@@ -131,6 +134,7 @@ def validateTemporal(temporalField, data, fieldTypes):
   lastDate = data[len(data) - 1][temporalField]
   if firstDate == lastDate:
     raise ValueError("No temporal movement over data.")
+  # TODO: Check to see if the latest data was too far in the past.
 
 
 def run():
@@ -153,6 +157,8 @@ def run():
           dataPoint = resource.fetchData(limit=100)[0]
         except IndexError:
           raise ValueError("No data!")
+        except KeyError:
+          raise ValueError("Error fetching first data point: " + str(e));
         temporalFieldNames = getTemporalFields(dataPoint)
         primaryTemporalField = getPrimaryTemporalField(temporalFieldNames)
         # Not temporal if there's no temporal field identified.
@@ -161,9 +167,12 @@ def run():
         fieldTypes = extractFieldTypesFrom(dataPoint)
         # Need to get the rest of the data ordered by the temopral field for
         # further analysis.
-        data = list(reversed(resource.fetchData(
-          limit=100, order=primaryTemporalField + " DESC"
-        )))
+        try:
+          data = list(reversed(resource.fetchData(
+            limit=100, order=primaryTemporalField + " DESC"
+          )))
+        except TypeError as e:
+          raise ValueError("Error fetching sample data: " + str(e))
         # If this is a not temporal stream, the function below will raise a
         # ValueError
         validateTemporal(primaryTemporalField, data, fieldTypes)
