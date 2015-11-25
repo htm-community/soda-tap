@@ -20,16 +20,17 @@ urls = (
 )
 app = web.application(urls, globals())
 render = web.template.render('templates/')
+redisUrl = urlparse.urlparse(REDIS_URL)
 
 
-def createConnectionPool():
-  redisUrl = urlparse.urlparse(REDIS_URL)
-  print redisUrl.hostname
-  print redisUrl.port
-  return redis.ConnectionPool(
-    host=redisUrl.hostname, port=redisUrl.port, 
-    db=REDIS_DB, password=redisUrl.password
-  )
+# def createConnectionPool():
+#   redisUrl = urlparse.urlparse(REDIS_URL)
+#   print redisUrl.hostname
+#   print redisUrl.port
+#   return redis.ConnectionPool(
+#     host=redisUrl.hostname, port=redisUrl.port, 
+#     db=REDIS_DB, password=redisUrl.password
+#   )
 
 
 def chunks(l, n):
@@ -50,7 +51,11 @@ class index:
 
 class catalog:
   def GET(self, page=0):
-    r = redis.Redis(connection_pool=POOL)
+    # r = redis.Redis(connection_pool=POOL)
+    r = redis.Redis(
+      host=redisUrl.hostname, port=redisUrl.port, 
+      db=REDIS_DB, password=redisUrl.password
+    )
     query = web.input()
     if "type" in query:
       stored = sorted(r.smembers(query["type"]))
@@ -69,7 +74,11 @@ class catalog:
 
 class resource:
   def GET(self, id=None):
-    r = redis.Redis(connection_pool=POOL)
+    # r = redis.Redis(connection_pool=POOL)
+    r = redis.Redis(
+      host=redisUrl.hostname, port=redisUrl.port, 
+      db=REDIS_DB, password=redisUrl.password
+    )
     key = r.keys("*:" + id)
     if key is None:
       return web.notfound("The resource " + id + " was not found.")
@@ -81,5 +90,5 @@ class resource:
 
 
 if __name__ == "__main__":
-  POOL = createConnectionPool()
+  # POOL = createConnectionPool()
   app.run()
