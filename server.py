@@ -24,6 +24,8 @@ render = web.template.render('templates/')
 
 def createConnectionPool():
   redisUrl = urlparse.urlparse(REDIS_URL)
+  print redisUrl.hostname
+  print redisUrl.port
   return redis.ConnectionPool(
     host=redisUrl.hostname, port=redisUrl.port, 
     db=REDIS_DB, password=redisUrl.password
