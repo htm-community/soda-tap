@@ -44,7 +44,8 @@ def isNonNumericalNumberString(key):
     "number", "code", "year", "month", "meter_id", "bldgid",
     "parcel_no", "case", "_no", "uniquekey", "district",
     "_id", "_key", "checknum", "_group", "crimeid", "facility",
-    "phone", "licensenum", "_status", "fileno", "cnty_cd", "day"
+    "phone", "licensenum", "_status", "fileno", "cnty_cd", "day",
+    "extra_multiplier"
   ]
   for word in blacklist:
     if word in key:
@@ -100,6 +101,7 @@ def storeResource(redisClient, resource, field, fieldTypes):
     "fieldTypes": fieldTypes,
     "catalogEntry": resource.json()
   }))
+  redisClient.sadd(type, id)
 
 
 def getFieldRanking(data):
@@ -159,6 +161,10 @@ def run():
   for page in catalog:
     for resource in page:
       id = resource.getId()
+      
+      if id == "6me2-sejv":
+        print id
+        
       name = resource.getName()
       domain = resource.getMetadata()["domain"]
       

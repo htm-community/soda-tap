@@ -3,7 +3,7 @@ body {
 }
 
 .page-nav {
-    position: absolute;
+    position: fixed;
     top: 0;
     border: solid black 1px;
     padding: 10px;

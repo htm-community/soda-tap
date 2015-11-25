@@ -83,8 +83,14 @@ $(function() {
         var urlNoPage = splitUrl.join('/');
         var nextPage = currentPage + 1;
         var prevPage = currentPage - 1;
+        var hasQuery = url.indexOf('?') > 0
         var prevUrl = urlNoPage + '/' + prevPage;
         var nextUrl = urlNoPage + '/' + nextPage;
+        
+        if (hasQuery) {
+            prevUrl += '?' + url.split('?').pop();
+            nextUrl += '?' + url.split('?').pop();
+        }
         if (prevPage > 0) {
             $('.prev-nav-container').html('<a href="' + prevUrl + '">Page ' + prevPage + '</a>');
         }
