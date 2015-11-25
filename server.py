@@ -11,10 +11,6 @@ GOOGLE_MAPS_API_KEY = os.environ["GOOGLE_MAPS_API_KEY"]
 REDIS_URL = os.environ["REDIS_URL"]
 REDIS_DB = 0
 POOL = None
-if "PORT" in os.environ:
-  PORT = os.environ["PORT"]
-else:
-  PORT = 8080
 
 urls = (
   "/", "index",
@@ -85,4 +81,4 @@ class resource:
 
 if __name__ == "__main__":
   POOL = createConnectionPool()
-  app.run(port=PORT)
+  app.run()
