@@ -1,6 +1,7 @@
 $(function() {
 
     var DEFAULT_DATA_LIMIT = 100;
+    var RESOURCE_DATA_LIMIT = 5000;
 
     function graphData(id, data, graphLabels, temporalField, typeIndex) {
         var graphInput = [];
@@ -103,9 +104,13 @@ $(function() {
             var dataAttrs = $(el).data()
             var id = dataAttrs.id;
             var temporalField = dataAttrs.temporalField;
+            var dataLimit = DEFAULT_DATA_LIMIT;
+            if (_.contains(window.location.href, 'resource')) {
+                dataLimit = RESOURCE_DATA_LIMIT;
+            }
             var jsonUrl = dataAttrs.jsonUrl 
                 + '?$order=' + temporalField + ' DESC' 
-                + '&$limit=' + DEFAULT_DATA_LIMIT;
+                + '&$limit=' + dataLimit;
             var typeIndex = {};
             var dataType = dataAttrs.type;
             // The rest of the data attributes are field types.
