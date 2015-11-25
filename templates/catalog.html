@@ -24,7 +24,7 @@ $def with (page, dictTemplate, listTemplate, googleMapsApiKey)
   </head>
   <body>
   
-<h1>SODA TAP CATALOG</h1>
+<h1><a href="/catalog/0">SODA TAP CATALOG</a></h1>
 
 <h2>${len(page)} results:</h2>
 
@@ -64,17 +64,7 @@ $for resource in page:
                 <tbody></tbody>
            </table>
         </div>
-        
-        <!--<table id="${id}-table">-->
-            <!--<thead></thead>-->
-            <!--<tbody></tbody>-->
-        <!--</table>-->
-        
-        <!--<div class="meta">-->
-            <!--<div class="types">-->
-                <!--$:dictTemplate(fieldTypes, dictTemplate, listTemplate)-->
-            <!--</div>-->
-        <!--</div>-->
+
     </article>
   
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->

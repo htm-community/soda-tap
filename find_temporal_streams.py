@@ -44,7 +44,7 @@ def isNonNumericalNumberString(key):
     "number", "code", "year", "month", "meter_id", "bldgid",
     "parcel_no", "case", "_no", "uniquekey", "district",
     "_id", "_key", "checknum", "_group", "crimeid", "facility",
-    "phone", "licensenum", "_status", "fileno"
+    "phone", "licensenum", "_status", "fileno", "cnty_cd", "day"
   ]
   for word in blacklist:
     if word in key:
@@ -119,22 +119,35 @@ def validateTemporal(temporalField, data, fieldTypes):
   # Not temporal if there are less than 100 data points.
   if len(data) < 100:
     raise ValueError("Not enough data to analyze.")
+  
   # Not temporal if there are no ints or floats or locations involved.
   allTypes = fieldTypes.values()
   if "int" not in allTypes \
       and "float" not in allTypes \
       and "location" not in allTypes:
     raise ValueError("No scalars or locations found.")
+  
   # If any points are missing a temporal field, not temporal.
   for point in data:
     if temporalField not in point.keys():
       raise ValueError("Some points are missing temporal field values.")
+  
   # If the first and last points have the same date, not temporal.
   firstDate = data[0][temporalField]
   lastDate = data[len(data) - 1][temporalField]
   if firstDate == lastDate:
     raise ValueError("No temporal movement over data.")
-  # TODO: Check to see if the latest data was too far in the past.
+  
+  # If latest data is old, not temporal.
+  today = datetime.datetime.today()
+  lastDate = datetime.datetime.strptime(lastDate, DATE_FORMAT)
+  monthAgo = today - datetime.timedelta(days=28)
+  if lastDate < monthAgo:
+    raise ValueError("Data is over a month old.")
+  
+  # If data is in the future, that ain't right.
+  if lastDate > today:
+    raise ValueError("Data is in the future!")
 
 
 def run():
@@ -179,13 +192,13 @@ def run():
         fieldRanking = getFieldRanking(data)
         storeResource(redisClient, resource, primaryTemporalField, fieldTypes)
         print colored(
-          "Stored %s (%s %s) by %s" % (name, id, domain, primaryTemporalField), 
+          "  Stored %s (%s %s) by %s" % (name, id, domain, primaryTemporalField), 
           "green"
         )
 
       except ValueError as e:
         print colored(
-          "\t%s (%s %s) is not temporal: %s" % (name, id, domain, e), 
+          "  [%s %s] %s: %s" % (id, domain, name, e), 
           "yellow"
         )
       

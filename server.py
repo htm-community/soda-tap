@@ -36,7 +36,10 @@ class catalog:
   def GET(self, page=0):
     stored = sorted(r.keys("*"))
     chunked = list(chunks(stored, ITEMS_PER_PAGE))
-    pageIds = chunked[int(page)]
+    try:
+      pageIds = chunked[int(page)]
+    except IndexError:
+      return web.notfound("Sorry, the page you were looking for was not found.")
     page = [json.loads(r.get(id)) for id in pageIds]
     return render.catalog(
       page, render.dict, render.list, GOOGLE_MAPS_API_KEY

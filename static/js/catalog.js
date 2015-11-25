@@ -75,60 +75,69 @@ $(function() {
         $tbody.html(html);
     }
     
-    // Enable navigation buttons
-    var url = window.location.href;
-    var splitUrl = url.split('/');
-    var currentPage = parseInt(splitUrl.pop());
-    var urlNoPage = splitUrl.join('/');
-    var nextPage = currentPage + 1;
-    var prevPage = currentPage - 1;
-    var prevUrl = urlNoPage + '/' + prevPage;
-    var nextUrl = urlNoPage + '/' + nextPage;
-    $('.prev-nav-container').html('<a href="' + prevUrl + '">Page ' + prevPage + '</a>');
-    $('.next-nav-container').html('<a href="' + nextUrl + '">Page ' + nextPage + '</a>');
+    function enableNavigationButtons() {
+        // Enable navigation buttons
+        var url = window.location.href;
+        var splitUrl = url.split('/');
+        var currentPage = parseInt(splitUrl.pop());
+        var urlNoPage = splitUrl.join('/');
+        var nextPage = currentPage + 1;
+        var prevPage = currentPage - 1;
+        var prevUrl = urlNoPage + '/' + prevPage;
+        var nextUrl = urlNoPage + '/' + nextPage;
+        if (prevPage > 0) {
+            $('.prev-nav-container').html('<a href="' + prevUrl + '">Page ' + prevPage + '</a>');
+        }
+        $('.next-nav-container').html('<a href="' + nextUrl + '">Page ' + nextPage + '</a>');
+    }
 
-    // Renders visualizations for each resource on the page.
-    $('.viz').each(function(i, el) {
-        var dataAttrs = $(el).data()
-        var id = dataAttrs.id;
-        var temporalField = dataAttrs.temporalField;
-        var jsonUrl = dataAttrs.jsonUrl 
-            + '?$order=' + temporalField + ' DESC' 
-            + '&$limit=' + DEFAULT_DATA_LIMIT;
-        var typeIndex = {};
-        var dataType = dataAttrs.type;
-        // The rest of the data attributes are field types.
-        _.each(dataAttrs, function(value, name) {
-            if (! _.contains(['id', 'jsonUrl', 'temporalField', 'type'], name)) {
-                typeIndex[name] = value;
-            }
-        });
-
-        $.getJSON(jsonUrl, function(data) {
-            var graphLabels, tableHeaders;
-            // Reverse the data because it came in descending order.
-            data = data.reverse();
-
-            // The temporal field is always first because it contains the date
-            graphLabels = [temporalField];
-            tableHeaders = [temporalField];
-            _.each(typeIndex, function(type, name) {
-                // We will graph all number types
-                if (_.contains(['int', 'float'], type)) {
-                    graphLabels.push(name);
-                }
-                if (name != temporalField) {
-                    tableHeaders.push(name);
+    function renderVisualizations() {
+        // Renders visualizations for each resource on the page.
+        $('.viz').each(function(i, el) {
+            var dataAttrs = $(el).data()
+            var id = dataAttrs.id;
+            var temporalField = dataAttrs.temporalField;
+            var jsonUrl = dataAttrs.jsonUrl 
+                + '?$order=' + temporalField + ' DESC' 
+                + '&$limit=' + DEFAULT_DATA_LIMIT;
+            var typeIndex = {};
+            var dataType = dataAttrs.type;
+            // The rest of the data attributes are field types.
+            _.each(dataAttrs, function(value, name) {
+                if (! _.contains(['id', 'jsonUrl', 'temporalField', 'type'], name)) {
+                    typeIndex[name] = value;
                 }
             });
-
-            if (dataType == 'scalar') {
-                graphData(id, data, graphLabels, temporalField, typeIndex);
-            } else {
-                renderMap(id, data);
-            }
-            renderDataTable(id, data, tableHeaders, temporalField, typeIndex);
+    
+            $.getJSON(jsonUrl, function(data) {
+                var graphLabels, tableHeaders;
+                // Reverse the data because it came in descending order.
+                data = data.reverse();
+    
+                // The temporal field is always first because it contains the date
+                graphLabels = [temporalField];
+                tableHeaders = [temporalField];
+                _.each(typeIndex, function(type, name) {
+                    // We will graph all number types
+                    if (_.contains(['int', 'float'], type)) {
+                        graphLabels.push(name);
+                    }
+                    if (name != temporalField) {
+                        tableHeaders.push(name);
+                    }
+                });
+    
+                if (dataType == 'scalar') {
+                    graphData(id, data, graphLabels, temporalField, typeIndex);
+                } else {
+                    renderMap(id, data);
+                }
+                renderDataTable(id, data, tableHeaders, temporalField, typeIndex);
+            });
         });
-    });
+    }
+    
+    enableNavigationButtons();
+    renderVisualizations();
     
 }());
