@@ -2,7 +2,7 @@ import requests
 
 URL = "http://api.us.socrata.com/api/catalog/"
 VERSION = "v1"
-FILTER = ""
+FILTER = "?only=datasets"
 
 DEFAULT_OFFSET = 0
 DEFAULT_LIMIT = 100
@@ -65,9 +65,9 @@ class Catalog:
 
 
   def next(self):
-    self._offset += self._limit
     data = fetchCatalogData(self._offset)
     page = Page(data)
+    self._offset += self._limit
     return page
 
 

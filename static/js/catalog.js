@@ -27,29 +27,47 @@ $(function() {
         var vizContainer = $('#' + id + '-viz');
         vizContainer.html('<div class="map" id="' + id + '-map"></div>');
         var markers = [];
-        var lastLatLng;
         var map = new google.maps.Map(document.getElementById(id + '-map'), {
             center: {lat: -34.397, lng: 150.644},
             zoom: 8
         });
+        var lats = []
+        var lons = []
         
         _.each(data, function(point) {
             var lat, lon;
-            _.each(point, function(val, key) {
-                if (val.type && val.type == 'Point') {
-                    lat = val.coordinates[1];
-                    lon = val.coordinates[0];
-                }
-            });
-            var myLatLng = {lat: lat, lng: lon};
-            markers.push(new google.maps.Marker({
-                position: myLatLng,
-                map: map,
-                title: 'Hello World!'
-            }));
-            lastLatLng = myLatLng;
+            if (point.latitude && point.longitude) {
+                lat = point.latitude;
+                lon = point.longitude;
+            } else {
+                _.each(point, function(val, key) {
+                    if (val.type && val.type == 'Point') {
+                        lat = val.coordinates[1];
+                        lon = val.coordinates[0];
+                    } else if (val.latitude) {
+                        lat = parseFloat(val.latitude);
+                        lon = parseFloat(val.longitude);
+                    }
+                });
+            }
+            if (lat && lon) {
+                var myLatLng = {lat: lat, lng: lon};
+                markers.push(new google.maps.Marker({
+                    position: myLatLng,
+                    map: map,
+                    title: 'Hello World!'
+                }));
+                lats.push(lat);
+                lons.push(lon);
+            } else {
+                console.log(point);
+            }
         });
-        map.setCenter(lastLatLng);
+        
+        map.setCenter({
+            lat: _.sum(lats) / lats.length,
+            lng: _.sum(lons) / lons.length
+        });
     }
     
     function renderDataTable(id, data, tableHeaders, temporalField, typeIndex) {
@@ -92,7 +110,7 @@ $(function() {
             prevUrl += '?' + url.split('?').pop();
             nextUrl += '?' + url.split('?').pop();
         }
-        if (prevPage > 0) {
+        if (prevPage > -1) {
             $('.prev-nav-container').html('<a href="' + prevUrl + '">Page ' + prevPage + '</a>');
         }
         $('.next-nav-container').html('<a href="' + nextUrl + '">Page ' + nextPage + '</a>');
