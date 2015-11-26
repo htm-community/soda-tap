@@ -21,8 +21,7 @@ class Resource:
     self._json = json
     self._temporalFieldNames = []
     self._samplePoint = None
-    self._fieldNames = None
-    self._fieldTypes = None
+    self._fieldMapping = None
     self._temporalFieldNames = None
     self._temporalIndex = None
     self._meanTimeDelta = None
@@ -92,20 +91,13 @@ class Resource:
             dataType = "date"
           except ValueError:
             dataType = "str"
-########################
-    # if "location_1" == key:
-    #   print "%s => %s" % (key, value)
-    #   print "data type: %s" % dataType
-########################
     return dataType
 
 
   def _extractFieldInfo(self):
-    self._fieldNames = []
-    self._fieldTypes = []
+    self._fieldMapping = {}
     for key, val in self._getSampleDataPoint().iteritems():
-      self._fieldNames.append(key)
-      self._fieldTypes.append(self._getDataType(key, val))
+      self._fieldMapping[key] = self._getDataType(key, val)
 
 
   def getLink(self):
@@ -149,16 +141,18 @@ class Resource:
     pass
 
 
-  def getFieldNames(self):
-    if self._fieldNames is None:
+  def getFieldMapping(self):
+    if self._fieldMapping is None:
       self._extractFieldInfo()
-    return self._fieldNames
+    return self._fieldMapping
+
+
+  def getFieldNames(self):
+    return self.getFieldMapping().keys()
 
 
   def getFieldTypes(self):
-    if self._fieldTypes is None:
-      self._extractFieldInfo()
-    return self._fieldTypes
+    return self.getFieldMapping().values()
 
 
   def getTemporalFields(self):

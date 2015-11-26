@@ -16,13 +16,13 @@ POOL = None
 
 
 def storeResource(redisClient, resource, field, 
-                  fieldTypes, meanTimeDelta, type):
+                  fieldMapping, meanTimeDelta, type):
   id = resource.getId()
   redisClient.set(id, json.dumps({
     "type": type,
     "temporalField": field,
     "jsonUrl": resource.getJsonUrl(),
-    "fieldTypes": fieldTypes,
+    "fieldTypes": fieldMapping,
     "meanTimeDelta": str(meanTimeDelta),
     "catalogEntry": resource.json()
   }))
@@ -53,8 +53,8 @@ def processResource(redisClient, resource, stored):
     # Need to get one data point to calculate the primary temporal field.
     primaryTemporalField = resource.getTemporalIndex()
 
+    fieldMapping = resource.getFieldMapping()
     fieldNames = resource.getFieldNames()
-    fieldTypes = resource.getFieldTypes()
 
     # If this is a not temporal stream, the function below will raise a
     # ResourceError
@@ -66,19 +66,13 @@ def processResource(redisClient, resource, stored):
     # Identify stream type (scalar or geospatial).
     streamType = "scalar"
     
-########################
-    # if "location_1" in fieldNames:
-    #   print fieldNames
-    #   print fieldTypes["location_1"]
-########################
-    
     if "location" in fieldNames \
     or ("latitude" in fieldNames and "longitude" in fieldNames):
       streamType = "geospatial"
 
     storeResource(
       redisClient, resource, primaryTemporalField,
-      fieldTypes, resource.getMeanTimeDelta(), streamType
+      fieldMapping, resource.getMeanTimeDelta(), streamType
     )
     print colored(
       "  Stored %s stream \"%s\" (%s %s) by %s" 

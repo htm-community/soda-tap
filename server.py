@@ -61,8 +61,12 @@ class catalog:
       stored = sorted(r.smembers(query["type"]))
     else:
       stored = sorted(r.keys("*"))
-      stored.remove("scalar")
-      stored.remove("geospatial")
+      try:
+        stored.remove("scalar")
+        stored.remove("geospatial")
+      except ValueError:
+        # Those indices may not exist yet, and that's okay.
+        pass
     chunked = list(chunks(stored, ITEMS_PER_PAGE))
     try:
       pageIds = chunked[int(page)]
