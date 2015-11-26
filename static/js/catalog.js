@@ -45,13 +45,16 @@ $(function() {
                         lat = val.coordinates[1];
                         lon = val.coordinates[0];
                     } else if (val.latitude) {
-                        lat = parseFloat(val.latitude);
-                        lon = parseFloat(val.longitude);
+                        lat = val.latitude;
+                        lon = val.longitude;
                     }
                 });
             }
             if (lat && lon) {
-                var myLatLng = {lat: lat, lng: lon};
+                var myLatLng = {
+                    lat: parseFloat(lat), 
+                    lng: parseFloat(lon)
+                };
                 markers.push(new google.maps.Marker({
                     position: myLatLng,
                     map: map,
