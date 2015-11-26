@@ -10,7 +10,7 @@ $def with (content, googleMapsApiKey)
     <title>$content.title</title>
 
     <!-- Bootstrap -->
-    <link href="/static/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
 
     <!-- My Style -->
     <link href="/static/css/style.css" rel="stylesheet">
@@ -24,7 +24,9 @@ $def with (content, googleMapsApiKey)
   </head>
   <body>
 
-  $:content
+  <div class="container">
+    $:content
+  </div>
 
   <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
   <script src="/static/bower_components/jquery/dist/jquery.min.js"></script>
@@ -39,6 +41,10 @@ $def with (content, googleMapsApiKey)
   <!-- Program code -->
   <script src="/static/js/catalog.js"></script>
 
+  <footer>
+    Powered by the <a href="https://dev.socrata.com/">Socrata Open Data API (SODA)</a>.
+  </footer>
+  
   </body>
 </html>
 

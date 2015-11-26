@@ -1,9 +1,23 @@
-$def with ()
+$def with (totalSodaResources, totalTemporalResources)
+
+<a href="https://github.com/rhyolight/soda-tap"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
 
 $var title: SODA Tap Catalog (prototype)
 
-<h1>SODA Tap</h1>
+<div class="jumbotron">
+    <h1><a href="https://dev.socrata.com/">SODA</a> Tap</h1>
+    
+    <img src="/static/img/soda-fountain.jpg" class="img-responsive" class="img-thumbnail"/>
+    
+    <p>This is a <a href="https://github.com/rhyolight/soda-tap">work in progress</a>.</p>
+    
+    <p><a class="btn btn-primary btn-lg" href="/catalog/0" role="button">Browse</a></p>
 
-<p>This is a <a href="https://github.com/rhyolight/soda-tap">work in progress</a>.</p>
+</div>  
 
-<p>See <a href="/catalog/0"><code>/catalog/0</code></a>.</p>
+
+<p><em><strong>SODA Tap</strong></em> is a <em>temporal</em> public data browser powered by the <a href="https://dev.socrata.com/">Socrata Open Data API (SODA)</a>. It was designed to be used as a library, but is also combined with a web server that exposes all public temporal data on the Socrata Platform via a web interface. Each temporal Socrata data resource is displayed with a chart or map, depending on the resource's data type (<code>scalar</code> or <code>geospatial</code>).</p>
+
+<p>Socrata currently exposes ${totalSodaResources} data resources through their experimental <a href="http://labs.socrata.com/docs/search.html">search API</a>. <em><strong>SODA Tap</strong></em> has identified ${totalTemporalResources} of them as temporal data streams, which can be browsed through this web application.</p>
+
+<p>Image above is <a href="https://www.flickr.com/photos/pmillera4/9790004805/in/photolist-fV7kmi-azYqe1-eqXNZs-a86ff-4RgqLD-d77Gss-4qyK4m-ncuYBC-piWNRm-8wq5KS-rkDMtg-6aC1Zw-7Hh7aS-a41z6-aCaQh-aa7ot-4LFceL-8QqGG-edpST-dR6d2-3bP4rX-4Pegx-2Zv4dh-5SMUFm-4RgqgR-4RkCA5-4PetY-5EGERB-6MVFre-q2CQF-cHjSzj-6SiZuL-bBZHPn-6AVpeT-bgJEU8-jJ9pfZ-28Sg4-4z6oPY-nLWd7E-4z6pfY-q2YFt-d7h1i-aCozg-ieUGw-9DkTVe-4RgpZH-a2XbFf-rC1SYt-aE3jX-6XAeRu">Creative Commons</a> media.</p>

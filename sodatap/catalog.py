@@ -30,12 +30,11 @@ def fetch(url):
   return dataOut
 
 
-def fetchCatalogData(offset):
-  return fetch(
-    URL + VERSION
-    + "?" + FILTER
-    + "&offset=" + str(offset)
-  )
+def fetchCatalogData(offset, limit=100, filter=True):
+  url = URL + VERSION + "?offset=" + str(offset) + "&limit=" + str(limit)
+  if filter:
+    url += "&" + FILTER
+  return fetch(url)
 
 
 class Catalog:
@@ -64,4 +63,7 @@ class Catalog:
     self._offset += self._limit
     return page
 
-
+  
+  def getTotalSodaResourceCount(self):
+    data = fetchCatalogData(0, 1, filter=False)
+    return data["resultSetSize"]

@@ -1,4 +1,4 @@
-$def with (page, dictTemplate, listTemplate)
+$def with (page, resourceTemplate, dictTemplate, listTemplate)
 
 <h1><a href="/catalog/0">SODA TAP CATALOG</a></h1>
 <h2>${len(page)} results:</h2>
@@ -9,42 +9,4 @@ $def with (page, dictTemplate, listTemplate)
 $var title: SODA Tap Catalog (prototype)
 
 $for resource in page:
-    $ entry = resource["catalogEntry"]
-    $ resourceData = entry["resource"]
-    $ id = resourceData["id"]
-    $ name = resourceData["name"]
-    $ description = resourceData["description"]
-    $ resourceDomain = entry["metadata"]["domain"]
-    $ resourceClassification = entry["classification"]
-    $ permalink = entry["permalink"]
-    $ jsonUrl = resource["jsonUrl"]
-    $ temporalField = resource["temporalField"]
-    $ fieldTypes = resource["fieldTypes"]
-    $ dataType = resource["type"]
-
-    <article id="$id" class="resource">
-        <h3>
-            <a href="/resource/${id}">$name</a> 
-            <small><a href="${permalink}">$resourceDomain $id</a></small>
-        </h3>
-        <p>$description</p>
-        <div id="${id}-viz" class="viz" 
-             data-id="$id" 
-             data-type="$dataType"
-             data-json-url="$jsonUrl"
-             data-temporal-field="$temporalField"
-             $for k, v in fieldTypes.iteritems():
-                 data-${k}="${v}"
-        >
-        </div>
-        
-        <div class="data-table" id="${id}-table">
-            <table>
-                <thead></thead>
-                <tbody></tbody>
-           </table>
-        </div>
-
-    </article>
-
-
+    $:resourceTemplate(resource, dictTemplate, listTemplate)

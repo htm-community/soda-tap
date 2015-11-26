@@ -1,7 +1,5 @@
 $def with (resource, dictTemplate, listTemplate)
 
-<h1><a href="/catalog/0">SODA TAP CATALOG</a></h1>
-
 $ entry = resource["catalogEntry"]
 $ resourceData = entry["resource"]
 $ id = resourceData["id"]
@@ -18,26 +16,33 @@ $ dataType = resource["type"]
 $var title: Resource ${id} 
 
 <article id="$id" class="resource">
-    <h3>
-        <a href="/resource/${id}">$name</a> 
-        <small><a href="${permalink}" target="_blank">$resourceDomain $id</a></small>
-    </h3>
-    <p>$description</p>
-    <div id="${id}-viz" class="viz" 
-         data-id="$id" 
-         data-type="$dataType"
-         data-json-url="$jsonUrl"
-         data-temporal-field="$temporalField"
-         $for k, v in fieldTypes.iteritems():
-             data-${k}="${v}"
-    >
+
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">
+            <a href="/resource/${id}">$name</a> 
+            <small><a href="${permalink}" target="_blank">$resourceDomain $id</a></small>
+        </h3>
+      </div>
+      <div class="panel-body">
+        <p>$description</p>
+        <div id="${id}-viz" class="viz" 
+             data-id="$id" 
+             data-type="$dataType"
+             data-json-url="$jsonUrl"
+             data-temporal-field="$temporalField"
+             $for k, v in fieldTypes.iteritems():
+                 data-${k}="${v}"
+        >
+        </div>
+        
+        <div class="data-table" id="${id}-table">
+            <table>
+                <thead></thead>
+                <tbody></tbody>
+           </table>
+        </div>
+      </div>
     </div>
     
-    <div class="data-table" id="${id}-table">
-        <table>
-            <thead></thead>
-            <tbody></tbody>
-       </table>
-    </div>
-
 </article>

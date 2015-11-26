@@ -18,7 +18,7 @@ $(function() {
             graphInput, 
             {
                 labels: graphLabels,
-                width: 800
+                width: $('.panel-body').width()
             }
         );
     }

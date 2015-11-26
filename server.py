@@ -6,6 +6,8 @@ import urlparse
 import web
 import redis
 
+from sodatap import createCatalog
+
 ITEMS_PER_PAGE = 10
 GOOGLE_MAPS_API_KEY = os.environ["GOOGLE_MAPS_API_KEY"]
 REDIS_URL = os.environ["REDIS_URL"]
@@ -21,7 +23,7 @@ urls = (
 app = web.application(urls, globals())
 render = web.template.render('templates/')
 redisUrl = urlparse.urlparse(REDIS_URL)
-
+cat = createCatalog()
 
 # def createConnectionPool():
 #   redisUrl = urlparse.urlparse(REDIS_URL)
@@ -46,7 +48,18 @@ def chunks(l, n):
 
 class index:
   def GET(self):
-    return render.layout(render.index(), GOOGLE_MAPS_API_KEY)
+    r = redis.Redis(
+      host=redisUrl.hostname, port=redisUrl.port, 
+      db=REDIS_DB, password=redisUrl.password
+    )
+    totalSodaResources = cat.getTotalSodaResourceCount()
+    totalTemporalResources = len(r.keys("*")) - 2
+    if totalTemporalResources < 0:
+      totalTemporalResources = 0
+    return render.layout(
+      render.index(totalSodaResources, totalTemporalResources), 
+      GOOGLE_MAPS_API_KEY
+    )
 
 
 class catalog:
@@ -74,7 +87,7 @@ class catalog:
       return web.notfound("Sorry, the page you were looking for was not found.")
     page = [json.loads(r.get(id)) for id in pageIds]
     return render.layout(render.catalog(
-      page, render.dict, render.list
+      page, render.resource, render.dict, render.list
     ), GOOGLE_MAPS_API_KEY)
 
 
