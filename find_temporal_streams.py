@@ -16,8 +16,9 @@ POOL = None
 
 
 def storeResource(redisClient, resource, field, 
-                  fieldMapping, meanTimeDelta, type):
+                  fieldMapping, type):
   id = resource.getId()
+  meanTimeDelta = resource.getMeanTimeDelta()
   redisClient.set(id, json.dumps({
     "type": type,
     "temporalField": field,
@@ -29,26 +30,9 @@ def storeResource(redisClient, resource, field,
   redisClient.sadd(type, id)
 
 
-# WIP
-def getFieldRanking(data):
-  counts = {}
-  for point in data:
-    for k, v in point.iteritems():
-      if v is None or v == "":
-        if k not in counts.keys():
-          counts[k] = 1
-        else:
-          counts[k] += 1
-  # print counts
-
-
 def processResource(redisClient, resource, stored):
-  id = resource.getId()
-  name = resource.getName()
-  link = resource.getPermalink()
-  domain = resource.getMetadata()["domain"]
   try:
-    if id in stored:
+    if resource.getId() in stored:
       raise ResourceError("Already stored.")
     # Need to get one data point to calculate the primary temporal field.
     primaryTemporalField = resource.getTemporalIndex()
@@ -60,9 +44,6 @@ def processResource(redisClient, resource, stored):
     # ResourceError
     resource.validate()
     
-    # TODO: rank fields?
-    # fieldRanking = getFieldRanking(data)
-
     # Identify stream type (scalar or geospatial).
     streamType = "scalar"
     
@@ -72,17 +53,18 @@ def processResource(redisClient, resource, stored):
 
     storeResource(
       redisClient, resource, primaryTemporalField,
-      fieldMapping, resource.getMeanTimeDelta(), streamType
+      fieldMapping, streamType
     )
     print colored(
       "  Stored %s stream \"%s\" (%s %s) by %s" 
-        % (streamType, name, id, domain, primaryTemporalField),
+        % (streamType, resource.getName(), resource.getId(), 
+           resource.getDomain(), primaryTemporalField),
       "green"
     )
 
   except ResourceError as e:
     print colored(
-      "  %s | %s | " % (name, link),
+      "  %s | %s | " % (resource.getName(), resource.getPermalink()),
       "yellow"
     ) + " " + colored(str(e), "magenta")
 

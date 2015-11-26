@@ -120,6 +120,10 @@ class Resource:
     return self._json["metadata"]
 
 
+  def getDomain(self):
+    return self.getMetadata()["domain"]
+
+
   def getName(self):
     return self.getResource()["name"]
 
@@ -195,6 +199,19 @@ class Resource:
         name = n
     self._temporalIndex = name
     return self._temporalIndex
+
+
+  # # WIP
+  # def getFieldRanking(self, data):
+  #   counts = {}
+  #   for point in data:
+  #     for k, v in point.iteritems():
+  #       if v is None or v == "":
+  #         if k not in counts.keys():
+  #           counts[k] = 1
+  #         else:
+  #           counts[k] += 1
+  #   # print counts
 
 
   def _calculateMeanTimeDelta(self, data=None):

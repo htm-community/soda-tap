@@ -39,9 +39,9 @@ def chunks(l, n):
     yield l[i:i + n]
 
 
-#####
-# HTTP handlers
-#####
+#################
+# HTTP handlers #
+#################
 
 
 class index:
@@ -95,6 +95,11 @@ class resource:
     ), GOOGLE_MAPS_API_KEY)
 
 
+##############
+# Start here #
+##############
+
 if __name__ == "__main__":
+  # TODO: put connection pool back (there were issues on Heroku with it).
   # POOL = createConnectionPool()
   app.run()
