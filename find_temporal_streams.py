@@ -15,53 +15,33 @@ POOL = None
 
 
 
-def storeResource(redisClient, resource, field, 
-                  fieldMapping, type):
+def storeResource(redisClient, resource):
   id = resource.getId()
   meanTimeDelta = resource.getMeanTimeDelta()
   redisClient.set(id, json.dumps({
-    "type": type,
-    "temporalField": field,
+    "type": resource.getStreamType(),
+    "temporalField": resource.getTemporalIndex(),
     "jsonUrl": resource.getJsonUrl(),
-    "fieldTypes": fieldMapping,
+    "fieldTypes": resource.getFieldMapping(),
     "meanTimeDelta": str(meanTimeDelta),
     "catalogEntry": resource.json()
   }))
-  redisClient.sadd(type, id)
+  redisClient.sadd(resource.getStreamType(), id)
+  print colored(
+    "  Stored %s stream \"%s\" (%s %s) by %s" 
+      % (resource.getStreamType(), resource.getName(), resource.getId(), 
+         resource.getDomain(), resource.getTemporalIndex()),
+    "green"
+  )
 
 
-def processResource(redisClient, resource, stored):
+
+def processResource(redisClient, resource):
   try:
-    if resource.getId() in stored:
-      raise ResourceError("Already stored.")
-    # Need to get one data point to calculate the primary temporal field.
-    primaryTemporalField = resource.getTemporalIndex()
-
-    fieldMapping = resource.getFieldMapping()
-    fieldNames = resource.getFieldNames()
-
     # If this is a not temporal stream, the function below will raise a
     # ResourceError
     resource.validate()
-    
-    # Identify stream type (scalar or geospatial).
-    streamType = "scalar"
-    
-    if "location" in fieldNames \
-    or ("latitude" in fieldNames and "longitude" in fieldNames):
-      streamType = "geospatial"
-
-    storeResource(
-      redisClient, resource, primaryTemporalField,
-      fieldMapping, streamType
-    )
-    print colored(
-      "  Stored %s stream \"%s\" (%s %s) by %s" 
-        % (streamType, resource.getName(), resource.getId(), 
-           resource.getDomain(), primaryTemporalField),
-      "green"
-    )
-
+    storeResource(redisClient, resource)
   except ResourceError as e:
     print colored(
       "  %s | %s | " % (resource.getName(), resource.getPermalink()),
@@ -75,15 +55,12 @@ def run(offset=0):
     host=redisUrl.hostname, port=redisUrl.port, 
     db=REDIS_DB, password=redisUrl.password
   )
-  stored = redisClient.keys("*")
   count = offset
   catalog = createCatalog(offset=offset)
 
   for page in catalog:
     for resource in page:
-      
-      processResource(redisClient, resource, stored)
-      
+      processResource(redisClient, resource)
       count += 1
       if count % 10 == 0:
         keyCount = len(redisClient.keys("*"))
@@ -97,7 +74,6 @@ def run(offset=0):
           % (amtStored, keyCount, percStored),
           "cyan"
         )
-
 
 
 if __name__ == "__main__":

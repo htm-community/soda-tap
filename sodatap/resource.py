@@ -100,6 +100,31 @@ class Resource:
       self._fieldMapping[key] = self._getDataType(key, val)
 
 
+  def _calculateMeanTimeDelta(self, data=None):
+    if self._meanTimeDelta is not None:
+      return self._meanTimeDelta
+    if data is None:
+      data = self.fetchData(limit=100)
+    temporalIndex = self.getTemporalIndex()
+    deltas = []
+    lastDate = None
+    for point in data:
+      d = self._stringToDate(point[temporalIndex])
+      if lastDate is None:
+        lastDate = d
+        continue
+      diff = d - lastDate
+      deltas.append(diff)
+      lastDate = d
+    meanTimeDelta = sum(deltas, datetime.timedelta(0)) / len(deltas)
+    if meanTimeDelta.days > TOO_SLOW_INTERVAL_DAYS:
+      raise ResourceError(
+        "Time delta between points is too high: " + str(meanTimeDelta)
+      )
+    self._meanTimeDelta = meanTimeDelta
+    return self._meanTimeDelta
+
+
   def getLink(self):
     return self._json["link"]
 
@@ -141,8 +166,18 @@ class Resource:
     return self._meanTimeDelta
 
 
-  def getLocation(self):
-    pass
+  def getLocationField(self):
+    for k, v in self.getFieldMapping().iteritems():
+      if v == "location":
+        return k
+    return None
+
+
+  def getStreamType(self):
+    if "location" in self.getFieldTypes():
+      return "geospatial"
+    else:
+      return "spatial"
 
 
   def getFieldMapping(self):
@@ -214,31 +249,6 @@ class Resource:
   #   # print counts
 
 
-  def _calculateMeanTimeDelta(self, data=None):
-    if self._meanTimeDelta is not None:
-      return self._meanTimeDelta
-    if data is None:
-      data = self.fetchData(limit=100)
-    temporalIndex = self.getTemporalIndex()
-    deltas = []
-    lastDate = None
-    for point in data:
-      d = self._stringToDate(point[temporalIndex])
-      if lastDate is None:
-        lastDate = d
-        continue
-      diff = d - lastDate
-      deltas.append(diff)
-      lastDate = d
-    meanTimeDelta = sum(deltas, datetime.timedelta(0)) / len(deltas)
-    if meanTimeDelta.days > TOO_SLOW_INTERVAL_DAYS:
-      raise ResourceError(
-        "Time delta between points is too high: " + str(meanTimeDelta)
-      )
-    self._meanTimeDelta = meanTimeDelta
-    return self._meanTimeDelta
-
-
   def validate(self):
     name = self.getName()
     data = self.fetchData(limit=100)
@@ -272,7 +282,12 @@ class Resource:
     
     # If latest data is old, not temporal.
     today = datetime.datetime.today()
-    lastDate = self._stringToDate(lastDate)
+    try:
+      lastDate = self._stringToDate(lastDate)
+    except ValueError as e:
+      raise ResourceError(
+        "Last known data point has wrong date format: " + str(e)
+      )
     sixMonthsAgo = today - datetime.timedelta(days=TOO_OLD_DAYS)
     if lastDate < sixMonthsAgo:
       raise ResourceError("Data is over " + str(TOO_OLD_DAYS) + " days old.")
@@ -298,12 +313,15 @@ class Resource:
 
     try:
       response = requests.get(url, timeout=5)
+      if response.status_code is not 200:
+        raise ResourceError("HTTP request error: " + response.text)
     except requests.exceptions.ConnectionError:
       raise ResourceError("HTTP Connection error on " + url + ".")
     except requests.exceptions.Timeout:
-      raise ResourceError("HTTP Connection timeout on " + url + ".")
+      raise ResourceError("H  TTP Connection timeout on " + url + ".")
     
     data = response.json()
+    
     # If the order by temporal index was applied, the data is DESC, so reverse.
     if order is not None:
       data = list(reversed(data))
