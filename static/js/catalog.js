@@ -62,8 +62,8 @@ $(function() {
                 }));
                 lats.push(lat);
                 lons.push(lon);
-            } else {
-                console.log(point);
+//            } else {
+//                console.log(point);
             }
         });
         
