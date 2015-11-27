@@ -70,15 +70,16 @@ class catalog:
       db=REDIS_DB, password=redisUrl.password
     )
     query = web.input()
+
     if "type" in query:
       stored = sorted(r.smembers(query["type"]))
     else:
       stored = sorted(r.keys("*"))
-    try:
-      stored = [x for x in stored if x != "scalar" and x != "geospatial"]
-    except ValueError:
-      # Those indices may not exist yet, and that's okay.
-      pass
+      try:
+        stored = [x for x in stored if x != "scalar" and x != "geospatial"]
+      except ValueError:
+        # Those indices may not exist yet, and that's okay.
+        pass
     chunked = list(chunks(stored, ITEMS_PER_PAGE))
     try:
       pageIds = chunked[int(page)]

@@ -18,14 +18,19 @@ POOL = None
 def storeResource(redisClient, resource):
   id = resource.getId()
   meanTimeDelta = resource.getMeanTimeDelta()
-  redisClient.set(id, json.dumps({
+  payload = {
     "type": resource.getStreamType(),
     "temporalField": resource.getTemporalIndex(),
     "jsonUrl": resource.getJsonUrl(),
     "fieldTypes": resource.getFieldMapping(),
     "meanTimeDelta": str(meanTimeDelta),
     "catalogEntry": resource.json()
-  }))
+  }
+  if resource.hasMultipleSeries():
+    payload["seriesId"] = resource.getSeriesIdentifier()
+    payload["seriesNames"] = resource.getSeriesNames()
+    
+  redisClient.set(id, json.dumps(payload))
   redisClient.sadd(resource.getStreamType(), id)
   print colored(
     "  Stored %s stream \"%s\" (%s %s) by %s" 
@@ -33,7 +38,6 @@ def storeResource(redisClient, resource):
          resource.getDomain(), resource.getTemporalIndex()),
     "green"
   )
-
 
 
 def processResource(redisClient, resource):

@@ -21,10 +21,15 @@ class Resource:
     self._json = json
     self._temporalFieldNames = []
     self._samplePoint = None
+    self._samplePage = None
     self._fieldMapping = None
     self._temporalFieldNames = None
     self._temporalIndex = None
     self._meanTimeDelta = None
+    self._samplePointsPerTime = None
+    self._seriesIdentifier = None
+    self._seriesNames = []
+
 
   def _getSampleDataPoint(self):
     if self._samplePoint is not None:
@@ -36,6 +41,12 @@ class Resource:
       raise ResourceError("No data!")
     except KeyError as e:
       raise ResourceError("Error fetching first data point: " + str(e))
+
+
+  def _getSampleDataPage(self):
+    if self._samplePage is None:
+      self._samplePage = self.fetchData(limit=100)
+    return self._samplePage
 
 
   def _isNonNumericalNumberString(self, key):
@@ -100,11 +111,10 @@ class Resource:
       self._fieldMapping[key] = self._getDataType(key, val)
 
 
-  def _calculateMeanTimeDelta(self, data=None):
+  def _calculateMeanTimeDelta(self):
     if self._meanTimeDelta is not None:
       return self._meanTimeDelta
-    if data is None:
-      data = self.fetchData(limit=100)
+    data = self._getSampleDataPage()
     temporalIndex = self.getTemporalIndex()
     deltas = []
     lastDate = None
@@ -177,7 +187,7 @@ class Resource:
     if "location" in self.getFieldTypes():
       return "geospatial"
     else:
-      return "spatial"
+      return "scalar"
 
 
   def getFieldMapping(self):
@@ -219,7 +229,7 @@ class Resource:
     temporalFieldNames = self.getTemporalFields()
     if len(temporalFieldNames) == 0:
       raise ResourceError(
-        "Resource " + self.getId() + " has no temporal fields."
+        "Resource has no temporal fields."
       )
     name = temporalFieldNames[0]
     for n in temporalFieldNames:
@@ -236,6 +246,66 @@ class Resource:
     return self._temporalIndex
 
 
+  def hasMultipleSeries(self):
+    # We start from the latest and work backwards for less of a chance that a
+    # series is cut in two.
+    sample = list(reversed(self._getSampleDataPage()))
+    fieldMapping = self.getFieldMapping()
+    temporalIndex = self.getTemporalIndex()
+    timeGroups = []
+    currentGroup = []
+    lastTime = None
+    
+    for point in sample:
+      thisTime = point[temporalIndex]
+      if lastTime is None:
+        currentGroup.append(point)
+      else:
+        if thisTime == lastTime:
+          currentGroup.append(point)
+        elif len(currentGroup) > 0:
+          timeGroups.append(currentGroup)
+          currentGroup = []
+      lastTime = thisTime
+
+    if len(timeGroups) <= 1:
+      return False
+    
+    # Get the name of the field that identifies the series.
+    fieldSets = {}
+    for name, type in fieldMapping.iteritems():
+      if type == "str":
+        fieldSets[name] = set()
+    for group in timeGroups:
+      for point in group:
+        for k, v in point.iteritems():
+          if k in fieldSets:
+            fieldSets[k].add(v)
+
+    seriesIdentifier = None
+    maxCount = 0
+    for k, v in fieldSets.iteritems():
+      cnt = len(v)
+      if cnt > maxCount:
+        maxCount = cnt
+        seriesIdentifier = k
+
+    self._seriesIdentifier = seriesIdentifier
+    self._seriesNames = list(fieldSets[seriesIdentifier])
+    return True
+
+
+  def getSeriesIdentifier(self):
+    if not self.hasMultipleSeries():
+      return None
+    return self._seriesIdentifier
+
+
+  def getSeriesNames(self):
+    if not self.hasMultipleSeries():
+      return []
+    return self._seriesNames
+
   # # WIP
   # def getFieldRanking(self, data):
   #   counts = {}
@@ -251,7 +321,7 @@ class Resource:
 
   def validate(self):
     name = self.getName()
-    data = self.fetchData(limit=100)
+    data = self._getSampleDataPage()
     allTypes = self.getFieldTypes()
     temporalIndex = self.getTemporalIndex()
     
@@ -297,7 +367,7 @@ class Resource:
       raise ResourceError("Data is in the future!")
   
     # If the average distance between points is too large, not temporal.
-    return self._calculateMeanTimeDelta(data)
+    return self._calculateMeanTimeDelta()
 
 
   def fetchData(self, limit=5000):
