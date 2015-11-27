@@ -40,7 +40,7 @@ class Resource:
 
   def _isNonNumericalNumberString(self, key):
     blacklist = [
-      "zip", "address", "incidentid", "offers_",
+      "zip", "address", "incidentid", "offers_", "recordid", "rowid",
       "number", "code", "year", "month", "meter_id", "bldgid",
       "parcel_no", "case", "_no", "uniquekey", "district",
       "_id", "_key", "checknum", "_group", "crimeid", "facility",
