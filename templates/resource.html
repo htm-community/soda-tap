@@ -31,6 +31,9 @@ $var title: Resource ${id}
              data-type="$dataType"
              data-json-url="$jsonUrl"
              data-temporal-field="$temporalField"
+             $if "seriesId" in resource:
+                 data-series-id="${resource['seriesId']}"
+             
              $for k, v in fieldTypes.iteritems():
                  data-${k}="${v}"
         >

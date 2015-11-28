@@ -28,10 +28,9 @@ def storeResource(redisClient, resource):
   }
   if resource.hasMultipleSeries():
     payload["seriesId"] = resource.getSeriesIdentifier()
-    payload["seriesNames"] = resource.getSeriesNames()
-    
-  redisClient.set(id, json.dumps(payload))
-  redisClient.sadd(resource.getStreamType(), id)
+    # payload["seriesNames"] = resource.getSeriesNames()
+  redisKey = resource.getStreamType() + ":" + id
+  redisClient.set(redisKey, json.dumps(payload))
   print colored(
     "  Stored %s stream \"%s\" (%s %s) by %s" 
       % (resource.getStreamType(), resource.getName(), resource.getId(), 
