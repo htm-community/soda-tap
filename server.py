@@ -53,9 +53,7 @@ class index:
       db=REDIS_DB, password=redisUrl.password
     )
     totalSodaResources = cat.getTotalSodaResourceCount()
-    totalTemporalResources = len(r.keys("*")) - 2
-    if totalTemporalResources < 0:
-      totalTemporalResources = 0
+    totalTemporalResources = len(r.keys("*"))
     return render.layout(
       render.index(totalSodaResources, totalTemporalResources), 
       GOOGLE_MAPS_API_KEY
