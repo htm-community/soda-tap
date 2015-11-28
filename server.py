@@ -91,10 +91,10 @@ class resource:
       host=redisUrl.hostname, port=redisUrl.port, 
       db=REDIS_DB, password=redisUrl.password
     )
-    key = r.keys("*:" + id)
-    if key is None:
+    keys = r.keys("*:" + id)
+    if len(keys) == 0:
       return web.notfound("The resource " + id + " was not found.")
-    data = r.get(id)
+    data = r.get(keys[0])
     resource = json.loads(data)
     return render.layout(render.resource(
       resource, render.dict, render.list
