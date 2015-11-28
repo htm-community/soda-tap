@@ -70,22 +70,16 @@ class catalog:
       db=REDIS_DB, password=redisUrl.password
     )
     query = web.input()
-
+    streamType = "*"
     if "type" in query:
-      stored = sorted(r.smembers(query["type"]))
-    else:
-      stored = sorted(r.keys("*"))
-      try:
-        stored = [x for x in stored if x != "scalar" and x != "geospatial"]
-      except ValueError:
-        # Those indices may not exist yet, and that's okay.
-        pass
-    chunked = list(chunks(stored, ITEMS_PER_PAGE))
+      streamType = query["type"]
+    storedKeys = sorted(r.keys(streamType + ":*"))
+
+    chunked = list(chunks(storedKeys, ITEMS_PER_PAGE))
     try:
       pageIds = chunked[int(page)]
     except IndexError:
       return web.notfound("Sorry, the page you were looking for was not found.")
-    print pageIds
     page = [json.loads(r.get(id)) for id in pageIds]
     return render.layout(render.catalog(
       page, render.resource, render.dict, render.list
