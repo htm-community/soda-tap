@@ -144,10 +144,6 @@ $(function() {
                 + '?$order=' + temporalField + ' DESC'
                 + '&$limit=' + dataLimit;
 
-            if (dataAttrs.seriesId) {
-                alert(id + ": " + dataAttrs.seriesId);
-            }
-
             // The rest of the data attributes are field types.
             _.each(dataAttrs, function(value, name) {
                 if (! _.contains(['id', 'jsonUrl', 'temporalField', 'type'], name)) {
