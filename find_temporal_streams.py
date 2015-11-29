@@ -1,4 +1,3 @@
-import datetime
 import json
 import os
 import sys
@@ -18,6 +17,7 @@ POOL = None
 def storeResource(redisClient, resource):
   id = resource.getId()
   meanTimeDelta = resource.getMeanTimeDelta()
+  isOverwrite = len(redisClient.keys("*:" + id)) == 1
   payload = {
     "type": resource.getStreamType(),
     "temporalField": resource.getTemporalIndex(),
@@ -31,12 +31,22 @@ def storeResource(redisClient, resource):
     # payload["seriesNames"] = resource.getSeriesNames()
   redisKey = resource.getStreamType() + ":" + id
   redisClient.set(redisKey, json.dumps(payload))
+  color = "green"
+  if isOverwrite:
+    color = "blue"
   print colored(
     "  Stored %s stream \"%s\" (%s %s) by %s" 
       % (resource.getStreamType(), resource.getName(), resource.getId(), 
          resource.getDomain(), resource.getTemporalIndex()),
-    "green"
+    color
   )
+
+def deleteExistingResource(redisClient, resource):
+  id = resource.getId()
+  existing = redisClient.keys("*:" + id)
+  for key in existing:
+    print colored("  Deleting existing resource " + id + ".", "red")
+    redisClient.delete(key)
 
 
 def processResource(redisClient, resource):
@@ -46,6 +56,7 @@ def processResource(redisClient, resource):
     resource.validate()
     storeResource(redisClient, resource)
   except ResourceError as e:
+    deleteExistingResource(redisClient, resource)
     print colored(
       "  %s | %s | " % (resource.getName(), resource.getPermalink()),
       "yellow"

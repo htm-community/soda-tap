@@ -1,4 +1,6 @@
 import datetime
+import random
+
 import requests
 
 DATE_FORMATS = [
@@ -16,7 +18,7 @@ class ResourceError(Exception):
 
 
 class Resource:
-  
+
   def __init__(self, json):
     self._json = json
     self._temporalFieldNames = []
@@ -32,11 +34,15 @@ class Resource:
 
 
   def _getSampleDataPoint(self):
-    if self._samplePoint is not None:
-      return self._samplePoint
-    # Taking the 2nd record in case the 1st one is dirty (it happens).
+    samplePage = self._getSampleDataPage()
+    if len(samplePage) < 100:
+      raise ResourceError(
+        "Not enough data to analyze: " + str(len(samplePage)) + " rows."
+      )
+    # Get a random sample from the page
     try:
-      return self.fetchData(limit=2)[1]
+      # Not including the first page, which sometimes is not really data.
+      return samplePage[random.randint(1, len(samplePage) - 1)]
     except IndexError:
       raise ResourceError("No data!")
     except KeyError as e:
@@ -51,12 +57,12 @@ class Resource:
 
   def _isNonNumericalNumberString(self, key):
     blacklist = [
-      "zip", "address", "incidentid", "offers_", "recordid", "rowid",
+      "zip", "incidentid", "offers_", "recordid", "rowid",
       "number", "code", "year", "month", "meter_id", "bldgid",
       "parcel_no", "case", "_no", "uniquekey", "district",
       "_id", "_key", "checknum", "_group", "crimeid", "facility",
       "phone", "licensenum", "_status", "fileno", "cnty_cd", "day",
-      "extra_multiplier", "nc_pin", "facid"
+      "extra_multiplier", "nc_pin", "facid", "vehicle_expiration_date"
     ]
     for word in blacklist:
       if word in key:
@@ -71,11 +77,11 @@ class Resource:
       except ValueError:
         pass
     raise ValueError(
-      "Date string " + str + " does not conform to expected date formats: " 
+      "Date string " + str + " does not conform to expected date formats: "
       + ", ".join(DATE_FORMATS)
     )
 
-  
+
   def _getDataType(self, key, value):
     if self._isNonNumericalNumberString(key):
       dataType = "str"
@@ -119,7 +125,10 @@ class Resource:
     deltas = []
     lastDate = None
     for point in data:
-      d = self._stringToDate(point[temporalIndex])
+      try:
+        d = self._stringToDate(point[temporalIndex])
+      except ValueError as e:
+        raise ResourceError(e)
       if lastDate is None:
         lastDate = d
         continue
@@ -208,19 +217,24 @@ class Resource:
     if self._temporalFieldNames is not None:
       return self._temporalFieldNames
     temporalFieldNames = []
-    point = self._getSampleDataPoint()
-    # find the temporal field names
-    for key, value in point.iteritems():
-      if isinstance(value, basestring):
-        try:
-          self._stringToDate(value)
-          # If coercing into a date worked, then it is a date.
-          temporalFieldNames.append(key)
-        except ValueError:
-          # Ignore errors from attempted date coercion.
-          pass
+
+    # Grab 5 sample points and look for temporal fields in each one, because sometimes points don't
+    # contain values.
+    for i in range(0, 5):
+      point = self._getSampleDataPoint()
+      # find the temporal field names
+      for key, value in point.iteritems():
+        if isinstance(value, basestring):
+          try:
+            self._stringToDate(value)
+            # If coercing into a date worked, then it is a date.
+            temporalFieldNames.append(key)
+          except ValueError:
+            # Ignore errors from attempted date coercion.
+            pass
+
     self._temporalFieldNames = temporalFieldNames
-    return self._temporalFieldNames 
+    return self._temporalFieldNames
 
 
   def getTemporalIndex(self):
@@ -255,7 +269,7 @@ class Resource:
     timeGroups = []
     currentGroup = []
     lastTime = None
-    
+
     for point in sample:
       thisTime = point[temporalIndex]
       if lastTime is None:
@@ -270,7 +284,7 @@ class Resource:
 
     if len(timeGroups) <= 1:
       return False
-    
+
     # Get the name of the field that identifies the series.
     fieldSets = {}
     for name, type in fieldMapping.iteritems():
@@ -278,9 +292,16 @@ class Resource:
         fieldSets[name] = set()
     for group in timeGroups:
       for point in group:
-        for k, v in point.iteritems():
-          if k in fieldSets:
-            fieldSets[k].add(v)
+        for name, value in point.iteritems():
+          if name in fieldSets:
+            fieldSets[name].add(value)
+
+    # At this point, fieldSets will be populated with keys that denote the name of a string field, each
+    # pointing to a list of values that occurred within each time group. The largest list will become
+    # the series identifier.
+    
+    # TODO: This is just a guess at how to get a series identifier. I will need to revisit this once
+    #       I start plotting multiple series on the UI.
 
     seriesIdentifier = None
     maxCount = 0
@@ -324,32 +345,28 @@ class Resource:
     data = self._getSampleDataPage()
     allTypes = self.getFieldTypes()
     temporalIndex = self.getTemporalIndex()
-    
+
     # State lottery is pretty useless from what I have seen.
     if "lottery" in name.lower() or "lotto" in name.lower():
       raise ResourceError("Lottery streams suck.")
-    
-    # Not temporal if there are less than 100 data points.
-    if len(data) < 100:
-      raise ResourceError("Not enough data to analyze.")
-    
+
     # Not temporal if there are no ints or floats or locations involved.
     if "int" not in allTypes \
         and "float" not in allTypes \
         and "location" not in allTypes:
       raise ResourceError("No scalars or locations found.")
-    
+
     # If any points are missing a temporal field, not temporal.
     for point in data:
       if temporalIndex not in point.keys():
         raise ResourceError("Some points are missing temporal field values.")
-    
-    # If the first and last points have the same date, not temporal.
-    firstDate = data[0][temporalIndex]
-    lastDate = data[len(data) - 1][temporalIndex]
+
+    # If the temporal index value is not changing, not temporal
+    firstDate = data[1][temporalIndex]
+    lastDate = data[50][temporalIndex]
     if firstDate == lastDate:
       raise ResourceError("No temporal movement over data.")
-    
+
     # If latest data is old, not temporal.
     today = datetime.datetime.today()
     try:
@@ -361,11 +378,11 @@ class Resource:
     sixMonthsAgo = today - datetime.timedelta(days=TOO_OLD_DAYS)
     if lastDate < sixMonthsAgo:
       raise ResourceError("Data is over " + str(TOO_OLD_DAYS) + " days old.")
-    
+
     # If data is way in the future, that ain't right.
     if lastDate > (today + datetime.timedelta(days=7)):
       raise ResourceError("Data is in the future!")
-  
+
     # If the average distance between points is too large, not temporal.
     return self._calculateMeanTimeDelta()
 
@@ -373,11 +390,11 @@ class Resource:
   def fetchData(self, limit=5000):
     url = self.getJsonUrl() + "?$limit=" + str(limit)
     order = None
-    
+
     # Order by temporalIndex if we have one
     if self._temporalIndex is not None:
       order = "&$order=" + self.getTemporalIndex() + " DESC"
-    
+
     if order is not None:
       url += order
 
@@ -389,9 +406,9 @@ class Resource:
       raise ResourceError("HTTP Connection error on " + url + ".")
     except requests.exceptions.Timeout:
       raise ResourceError("H  TTP Connection timeout on " + url + ".")
-    
+
     data = response.json()
-    
+
     # If the order by temporal index was applied, the data is DESC, so reverse.
     if order is not None:
       data = list(reversed(data))
@@ -400,7 +417,7 @@ class Resource:
 
   def json(self):
     return self._json
-  
+
   def __str__(self):
     try:
       return str(self.getLink())

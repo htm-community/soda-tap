@@ -1,7 +1,8 @@
 $(function() {
 
     var DEFAULT_DATA_LIMIT = 100;
-    var RESOURCE_DATA_LIMIT = 5000;
+    var SCALAR_DATA_LIMIT = 5000;
+    var GEO_DATA_LIMIT = 1000;
 
     function graphData(id, data, graphLabels, temporalField, typeIndex) {
         var graphInput = [];
@@ -15,14 +16,14 @@ $(function() {
         });
         new Dygraph(
             document.getElementById(id + '-viz'),
-            graphInput, 
+            graphInput,
             {
                 labels: graphLabels,
                 width: $('.panel-body').width()
             }
         );
     }
-    
+
     function renderMap(id, data) {
         var vizContainer = $('#' + id + '-viz');
         vizContainer.html('<div class="map" id="' + id + '-map"></div>');
@@ -33,7 +34,7 @@ $(function() {
         });
         var lats = []
         var lons = []
-        
+
         _.each(data, function(point) {
             var lat, lon;
             if (point.latitude && point.longitude) {
@@ -52,7 +53,7 @@ $(function() {
             }
             if (lat && lon) {
                 var myLatLng = {
-                    lat: parseFloat(lat), 
+                    lat: parseFloat(lat),
                     lng: parseFloat(lon)
                 };
                 markers.push(new google.maps.Marker({
@@ -62,17 +63,15 @@ $(function() {
                 }));
                 lats.push(lat);
                 lons.push(lon);
-//            } else {
-//                console.log(point);
             }
         });
-        
+
         map.setCenter({
             lat: _.sum(lats) / lats.length,
             lng: _.sum(lons) / lons.length
         });
     }
-    
+
     function renderDataTable(id, data, tableHeaders, temporalField, typeIndex) {
         var $table = $('#' + id + '-table');
         var $thead = $table.find('thead');
@@ -89,14 +88,19 @@ $(function() {
         _.each(data, function(point) {
             row = '<tr>';
             _.each(tableHeaders, function(header) {
-                row += '<td>' + point[header] + '</td>\n';
+                var dataType = typeIndex[header]
+                var value = point[header]
+                if (dataType == 'location' && value != undefined) {
+                    value = value.coordinates.join(', ')
+                }
+                row += '<td>' + value + '</td>\n';
             });
             row += '</tr>\n';
             html += row;
         });
         $tbody.html(html);
     }
-    
+
     function enableNavigationButtons() {
         // Enable navigation buttons
         var url = window.location.href;
@@ -108,7 +112,7 @@ $(function() {
         var hasQuery = url.indexOf('?') > 0
         var prevUrl = urlNoPage + '/' + prevPage;
         var nextUrl = urlNoPage + '/' + nextPage;
-        
+
         if (hasQuery) {
             prevUrl += '?' + url.split('?').pop();
             nextUrl += '?' + url.split('?').pop();
@@ -127,25 +131,30 @@ $(function() {
             var temporalField = dataAttrs.temporalField;
             var dataLimit = DEFAULT_DATA_LIMIT;
             if (_.contains(window.location.href, 'resource')) {
-                dataLimit = RESOURCE_DATA_LIMIT;
+                dataLimit = SCALAR_DATA_LIMIT;
             }
-            var jsonUrl = dataAttrs.jsonUrl 
-                + '?$order=' + temporalField + ' DESC' 
-                + '&$limit=' + dataLimit;
             var typeIndex = {};
             var dataType = dataAttrs.type;
+            if (dataType == 'geospatial') {
+                dataLimit = GEO_DATA_LIMIT;
+            }
+            var jsonUrl = dataAttrs.jsonUrl
+                + '?$order=' + temporalField + ' DESC'
+                + '&$limit=' + dataLimit;
+
             // The rest of the data attributes are field types.
             _.each(dataAttrs, function(value, name) {
                 if (! _.contains(['id', 'jsonUrl', 'temporalField', 'type'], name)) {
                     typeIndex[name] = value;
                 }
             });
-    
+
+            console.log(jsonUrl);
             $.getJSON(jsonUrl, function(data) {
                 var graphLabels, tableHeaders;
                 // Reverse the data because it came in descending order.
                 data = data.reverse();
-    
+
                 // The temporal field is always first because it contains the date
                 graphLabels = [temporalField];
                 tableHeaders = [temporalField];
@@ -158,7 +167,7 @@ $(function() {
                         tableHeaders.push(name);
                     }
                 });
-    
+
                 if (dataType == 'scalar') {
                     graphData(id, data, graphLabels, temporalField, typeIndex);
                 } else {
@@ -168,8 +177,8 @@ $(function() {
             });
         });
     }
-    
+
     enableNavigationButtons();
     renderVisualizations();
-    
+
 }());
