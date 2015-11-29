@@ -24,7 +24,7 @@ $(function() {
         );
     }
 
-    function renderMap(id, data) {
+    function renderMap(id, data, temporalField) {
         var vizContainer = $('#' + id + '-viz');
         vizContainer.html('<div class="map" id="' + id + '-map"></div>');
         var markers = [];
@@ -59,7 +59,7 @@ $(function() {
                 markers.push(new google.maps.Marker({
                     position: myLatLng,
                     map: map,
-                    title: 'Hello World!'
+                    title: point[temporalField]
                 }));
                 lats.push(lat);
                 lons.push(lon);
@@ -85,6 +85,8 @@ $(function() {
         });
         row += '</tr>\n';
         $thead.html(row);
+        // Only put 10 rows of data into the HTML table.
+        data = data.slice(0, 10);
         _.each(data, function(point) {
             row = '<tr>';
             _.each(tableHeaders, function(header) {
@@ -142,6 +144,10 @@ $(function() {
                 + '?$order=' + temporalField + ' DESC'
                 + '&$limit=' + dataLimit;
 
+            if (dataAttrs.seriesId) {
+                alert(id + ": " + dataAttrs.seriesId);
+            }
+
             // The rest of the data attributes are field types.
             _.each(dataAttrs, function(value, name) {
                 if (! _.contains(['id', 'jsonUrl', 'temporalField', 'type'], name)) {
@@ -149,7 +155,6 @@ $(function() {
                 }
             });
 
-            console.log(jsonUrl);
             $.getJSON(jsonUrl, function(data) {
                 var graphLabels, tableHeaders;
                 // Reverse the data because it came in descending order.
@@ -171,7 +176,7 @@ $(function() {
                 if (dataType == 'scalar') {
                     graphData(id, data, graphLabels, temporalField, typeIndex);
                 } else {
-                    renderMap(id, data);
+                    renderMap(id, data, temporalField);
                 }
                 renderDataTable(id, data, tableHeaders, temporalField, typeIndex);
             });

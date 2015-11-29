@@ -13,32 +13,32 @@ $ temporalField = resource["temporalField"]
 $ fieldTypes = resource["fieldTypes"]
 $ dataType = resource["type"]
 
-$var title: Resource ${id} 
+$var title: Resource ${id}
 
 <article id="$id" class="resource">
 
     <div class="panel panel-default">
       <div class="panel-heading">
         <h3 class="panel-title">
-            <a href="/resource/${id}">$name</a> 
+            <a href="/resource/${id}">$name</a>
             <small><a href="${permalink}" target="_blank">$resourceDomain $id</a></small>
         </h3>
       </div>
       <div class="panel-body">
         <p>$description</p>
-        <div id="${id}-viz" class="viz" 
-             data-id="$id" 
+        <div id="${id}-viz" class="viz"
+             data-id="$id"
              data-type="$dataType"
              data-json-url="$jsonUrl"
              data-temporal-field="$temporalField"
              $if "seriesId" in resource:
                  data-series-id="${resource['seriesId']}"
-             
+
              $for k, v in fieldTypes.iteritems():
                  data-${k}="${v}"
         >
         </div>
-        
+
         <div class="data-table" id="${id}-table">
             <table>
                 <thead></thead>
@@ -47,5 +47,5 @@ $var title: Resource ${id}
         </div>
       </div>
     </div>
-    
+
 </article>
