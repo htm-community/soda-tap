@@ -294,12 +294,12 @@ class Resource:
       for point in group:
         for name, value in point.iteritems():
           if name in fieldSets:
-            fieldSets[name].add(value)
+            fieldSets[name].add(str(value))
 
     # At this point, fieldSets will be populated with keys that denote the name of a string field, each
     # pointing to a list of values that occurred within each time group. The largest list will become
     # the series identifier.
-    
+
     # TODO: This is just a guess at how to get a series identifier. I will need to revisit this once
     #       I start plotting multiple series on the UI.
 

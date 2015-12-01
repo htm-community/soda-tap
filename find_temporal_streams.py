@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import urlparse
+from multiprocessing import Pool
 
 import redis
 from termcolor import colored
@@ -35,8 +36,8 @@ def storeResource(redisClient, resource):
   if isOverwrite:
     color = "blue"
   print colored(
-    "  Stored %s stream \"%s\" (%s %s) by %s" 
-      % (resource.getStreamType(), resource.getName(), resource.getId(), 
+    "  Stored %s stream \"%s\" (%s %s) by %s"
+      % (resource.getStreamType(), resource.getName(), resource.getId(),
          resource.getDomain(), resource.getTemporalIndex()),
     color
   )
@@ -50,6 +51,7 @@ def deleteExistingResource(redisClient, resource):
 
 
 def processResource(redisClient, resource):
+  sys.stdout = open(str(os.getpid()) + ".out", "w")
   try:
     # If this is a not temporal stream, the function below will raise a
     # ResourceError
@@ -66,26 +68,23 @@ def processResource(redisClient, resource):
 def run(offset=0):
   redisUrl = urlparse.urlparse(REDIS_URL)
   redisClient = redis.Redis(
-    host=redisUrl.hostname, port=redisUrl.port, 
+    host=redisUrl.hostname, port=redisUrl.port,
     db=REDIS_DB, password=redisUrl.password
   )
   count = offset
   catalog = createCatalog(offset=offset)
+  pool = Pool(processes=4)
 
   for page in catalog:
     for resource in page:
-      processResource(redisClient, resource)
+      pool.apply_async(processResource, [redisClient, resource])
       count += 1
       if count % 10 == 0:
         keyCount = len(redisClient.keys("*"))
-        # Adjust count for the two other keys used in Redis.
-        amtStored = count
-        if count > 0:
-          amtStored -= 2
-        percStored = float(keyCount) / float(amtStored)
+        percStored = float(keyCount) / float(count)
         print colored(
           "Inspected %i streams, stored %i temporal streams (%f)."
-          % (amtStored, keyCount, percStored),
+          % (count, keyCount, percStored),
           "cyan"
         )
 
