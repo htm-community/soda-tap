@@ -405,7 +405,7 @@ class Resource:
     except requests.exceptions.ConnectionError:
       raise ResourceError("HTTP Connection error on " + url + ".")
     except requests.exceptions.Timeout:
-      raise ResourceError("H  TTP Connection timeout on " + url + ".")
+      raise ResourceError("HTTP Connection timeout on " + url + ".")
 
     data = response.json()
 

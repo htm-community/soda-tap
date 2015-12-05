@@ -2,8 +2,9 @@ import json
 import os
 import sys
 import urlparse
-from multiprocessing import Pool
 
+import gevent
+from gevent import socket
 import redis
 from termcolor import colored
 
@@ -51,7 +52,6 @@ def deleteExistingResource(redisClient, resource):
 
 
 def processResource(redisClient, resource):
-  sys.stdout = open(str(os.getpid()) + ".out", "w")
   try:
     # If this is a not temporal stream, the function below will raise a
     # ResourceError
@@ -73,11 +73,10 @@ def run(offset=0):
   )
   count = offset
   catalog = createCatalog(offset=offset)
-  pool = Pool(processes=4)
 
   for page in catalog:
     for resource in page:
-      pool.apply_async(processResource, [redisClient, resource])
+      processResource(redisClient, resource)
       count += 1
       if count % 10 == 0:
         keyCount = len(redisClient.keys("*"))
