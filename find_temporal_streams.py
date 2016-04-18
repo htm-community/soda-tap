@@ -1,17 +1,15 @@
-import json
+import simplejson as json
 import os
 import sys
 import urlparse
 
-import gevent
-from gevent import socket
 import redis
 from termcolor import colored
 
 from sodatap import createCatalog, ResourceError
 
 REDIS_URL = os.environ["REDIS_URL"]
-REDIS_DB = 0
+REDIS_DB = 1
 POOL = None
 
 
@@ -43,6 +41,28 @@ def storeResource(redisClient, resource):
     color
   )
 
+
+def saveAsSkipped(redisClient, resource):
+  id = resource.getId()
+  skipped = redisClient.get("meta:skipped")
+  if skipped is None:
+    skipped = {"skipped":[]}
+  else:
+    skipped = json.loads(skipped)
+  skipped["skipped"].append(id)
+  redisClient.set("meta:skipped", json.dumps(skipped))
+
+
+def shouldProcess(redisClient, resource):
+  id = resource.getId()
+  skipped = redisClient.get("meta:skipped")
+  if skipped is None:
+    skipped = {"skipped":[]}
+  else:
+    skipped = json.loads(skipped)
+  return id not in skipped["skipped"]
+
+
 def deleteExistingResource(redisClient, resource):
   id = resource.getId()
   existing = redisClient.keys("*:" + id)
@@ -63,6 +83,7 @@ def processResource(redisClient, resource):
       "  %s | %s | " % (resource.getName(), resource.getPermalink()),
       "yellow"
     ) + " " + colored(str(e), "magenta")
+    saveAsSkipped(redisClient, resource)
 
 
 def run(offset=0):
@@ -76,7 +97,10 @@ def run(offset=0):
 
   for page in catalog:
     for resource in page:
-      processResource(redisClient, resource)
+      if shouldProcess(redisClient, resource):
+        processResource(redisClient, resource)
+      else:
+        print "Skipped {}".format(resource.getId())
       count += 1
       if count % 10 == 0:
         keyCount = len(redisClient.keys("*"))

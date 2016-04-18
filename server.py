@@ -6,12 +6,12 @@ import urlparse
 import web
 import redis
 
-from sodatap import createCatalog
+from sodatap import createCatalog, Resource
 
 ITEMS_PER_PAGE = 10
 GOOGLE_MAPS_API_KEY = os.environ["GOOGLE_MAPS_API_KEY"]
 REDIS_URL = os.environ["REDIS_URL"]
-REDIS_DB = 0
+REDIS_DB = 1
 POOL = None
 
 urls = (
@@ -19,6 +19,7 @@ urls = (
   "/catalog", "catalog",
   "/catalog/(.+)", "catalog",
   "/resource/(.+)", "resource",
+  "/list", "list",
 )
 app = web.application(urls, globals())
 render = web.template.render('templates/')
@@ -30,7 +31,7 @@ cat = createCatalog()
 #   print redisUrl.hostname
 #   print redisUrl.port
 #   return redis.ConnectionPool(
-#     host=redisUrl.hostname, port=redisUrl.port, 
+#     host=redisUrl.hostname, port=redisUrl.port,
 #     db=REDIS_DB, password=redisUrl.password
 #   )
 
@@ -49,13 +50,13 @@ def chunks(l, n):
 class index:
   def GET(self):
     r = redis.Redis(
-      host=redisUrl.hostname, port=redisUrl.port, 
+      host=redisUrl.hostname, port=redisUrl.port,
       db=REDIS_DB, password=redisUrl.password
     )
     totalSodaResources = cat.getTotalSodaResourceCount()
     totalTemporalResources = len(r.keys("*"))
     return render.layout(
-      render.index(totalSodaResources, totalTemporalResources), 
+      render.index(totalSodaResources, totalTemporalResources),
       GOOGLE_MAPS_API_KEY
     )
 
@@ -64,7 +65,7 @@ class catalog:
   def GET(self, page=0):
     # r = redis.Redis(connection_pool=POOL)
     r = redis.Redis(
-      host=redisUrl.hostname, port=redisUrl.port, 
+      host=redisUrl.hostname, port=redisUrl.port,
       db=REDIS_DB, password=redisUrl.password
     )
     query = web.input()
@@ -88,7 +89,7 @@ class resource:
   def GET(self, id=None):
     # r = redis.Redis(connection_pool=POOL)
     r = redis.Redis(
-      host=redisUrl.hostname, port=redisUrl.port, 
+      host=redisUrl.hostname, port=redisUrl.port,
       db=REDIS_DB, password=redisUrl.password
     )
     keys = r.keys("*:" + id)
@@ -99,6 +100,35 @@ class resource:
     return render.layout(render.resource(
       resource, render.dict, render.list
     ), GOOGLE_MAPS_API_KEY)
+
+
+class list:
+  def GET(self):
+    query = web.input()
+
+    r = redis.Redis(
+      host=redisUrl.hostname, port=redisUrl.port,
+      db=REDIS_DB, password=redisUrl.password
+    )
+
+    dataOut = {}
+
+    for key in [k for k in sorted(r.keys("*")) if not k.startswith("meta")]:
+      data = json.loads(r.get(key))
+      resource = Resource(data["catalogEntry"])
+      domain = resource.getDomain()
+      if domain not in dataOut:
+        dataOut[domain] = [];
+      dataOut[domain].append(resource)
+
+    if "md" in query:
+      return render.layout(render.resourceMarkdown(
+        dataOut, render.dict, render.list
+      ), GOOGLE_MAPS_API_KEY)
+    else:
+      return render.layout(render.resourceList(
+        dataOut, render.dict, render.list
+      ), GOOGLE_MAPS_API_KEY)
 
 
 ##############

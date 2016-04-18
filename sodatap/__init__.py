@@ -1,2 +1,2 @@
 from catalog import createCatalog
-from resource import ResourceError
+from resource import Resource, ResourceError

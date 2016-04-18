@@ -294,7 +294,12 @@ class Resource:
       for point in group:
         for name, value in point.iteritems():
           if name in fieldSets:
-            fieldSets[name].add(str(value))
+            try:
+              fieldSets[name].add(str(value))
+            except UnicodeEncodeError as e:
+              print name
+              print value
+              print e
 
     # At this point, fieldSets will be populated with keys that denote the name of a string field, each
     # pointing to a list of values that occurred within each time group. The largest list will become

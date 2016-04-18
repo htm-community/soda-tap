@@ -1,0 +1,22 @@
+$def with (domains, dictTemplate, listTemplate)
+
+$var title: Temporal SODA Streams for GlobalHack
+
+<h1>Temporal SODA Streams for GlobalHack</h1>
+
+<blockquote>These data streams were scoured from the Socrata Open Data API (SODA) by inspecting each stream for a temporal component. Each data stream below could be used as a near real-time data stream for online data processing and analytics.</blockquote>
+
+$for domain in domains:
+    <h2>$domain</h2>
+    <ul>
+        $for resource in domains[domain]:
+            <h5>$resource.getName()</h5>
+            <ul>
+                <li>
+                    <a href="$resource.getPermalink()" target="_blank">WEB</a>
+                </li>
+                <li>
+                    <a href="$resource.getJsonUrl()?\$limit=10" target="_blank">JSON</a> (first 10)
+                </li>
+            </ul>
+    </ul>
