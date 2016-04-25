@@ -31,7 +31,7 @@ class Catalog:
   def __getitem__(self, i):
     itemsPerPage = self._limit
     startOffset = itemsPerPage * i
-    data = fetchCatalogData(startOffset)
+    data = self._fetchData(startOffset)
     page = Page(data)
     return page
 
@@ -57,9 +57,10 @@ class Catalog:
       response = requests.get(url, timeout=5)
       if response.status_code is not 200:
         raise ResourceError("HTTP request error: " + response.text)
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as e:
+      print e
       raise ResourceError("HTTP Connection error on " + url + ".")
     except requests.exceptions.Timeout:
-      raise ResourceError("H  TTP Connection timeout on " + url + ".")
+      raise ResourceError("HTTP Connection timeout on " + url + ".")
 
     return response.json()
